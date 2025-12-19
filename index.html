@@ -343,6 +343,16 @@
             <button id="btnAuthHelp" type="button" class="btn btn-ghost px-3 py-1.5">Panduan</button>
           </div>
 
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span id="loginAttempts" class="help">—</span>
+            <div class="flex gap-2">
+              <button id="btnChangePass" type="button" class="btn btn-ghost px-3 py-1.5">Ubah Password</button>
+              <button id="btnResetAuth" type="button" class="btn btn-warning px-3 py-1.5">Reset Login</button>
+            </div>
+          </div>
+
+          <div id="capsWarning" class="hidden rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs font-semibold px-3 py-2">Caps Lock terdeteksi aktif.</div>
+
           <div id="loginError" class="hidden rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2"></div>
 
           <button id="btnLogin" class="btn btn-primary w-full" type="button">Masuk</button>
@@ -377,6 +387,7 @@
         <span class="hidden md:inline-block w-px h-6 bg-slate-200 mx-1 self-center"></span>
         <button id="btnHelp" class="btn btn-ghost" type="button" title="Panduan penggunaan & cara hosting">Panduan Web</button>
         <button id="btnLogout" class="btn btn-ghost" type="button" title="Keluar">Keluar</button>
+        <span id="userBadge" class="chip bg-white/80 border-slate-200 text-slate-700">User: —</span>
         <span id="storageBadge" class="chip bg-white/80 border-slate-200 text-slate-700">Penyimpanan: —</span>
       </div>
     </div>
@@ -2439,6 +2450,54 @@ http://localhost:8080</pre>
     // =============== AUTH (Login Lokal) ===============
     const AUTH_KEY = 'wpd_auth_v1';
     const SESSION_KEY = 'wpd_session_v1';
+    const AUTH_STATE_KEY = 'wpd_auth_state_v1';
+
+    const AUTH_POLICY = {
+      maxAttempts: 5,
+      lockMinutes: 5,
+      sessionHoursRemember: 8,
+      sessionHoursTemp: 1
+    };
+
+    function authStateGet() {
+      try {
+        return JSON.parse(localStorage.getItem(AUTH_STATE_KEY) || 'null') || { fails: 0, lockedUntil: null, lastUser: '' };
+      } catch {
+        return { fails: 0, lockedUntil: null, lastUser: '' };
+      }
+    }
+
+    function authStateSet(next) {
+      localStorage.setItem(AUTH_STATE_KEY, JSON.stringify(next));
+      renderLoginAttempts();
+    }
+
+    function isLocked() {
+      const st = authStateGet();
+      if (!st.lockedUntil) return false;
+      return new Date(st.lockedUntil).getTime() > Date.now();
+    }
+
+    function lockRemainingText() {
+      const st = authStateGet();
+      if (!st.lockedUntil) return '';
+      const ms = new Date(st.lockedUntil).getTime() - Date.now();
+      if (ms <= 0) return '';
+      const m = Math.ceil(ms / 60000);
+      return `Terlalu banyak percobaan. Coba lagi sekitar ${m} menit.`;
+    }
+
+    function renderLoginAttempts() {
+      const el = $('loginAttempts');
+      if (!el) return;
+      const st = authStateGet();
+      if (isLocked()) {
+        el.textContent = lockRemainingText();
+        return;
+      }
+      const left = Math.max(0, AUTH_POLICY.maxAttempts - (st.fails || 0));
+      el.textContent = `Sisa percobaan login: ${left}/${AUTH_POLICY.maxAttempts}`;
+    }
 
     async function sha256Hex(text) {
       const enc = new TextEncoder().encode(text);
@@ -2450,10 +2509,24 @@ http://localhost:8080</pre>
     async function ensureAuthConfig() {
       // simpan hash default pertama kali
       const raw = localStorage.getItem(AUTH_KEY);
-      if (raw) return;
-      const passHash = await sha256Hex('admin123');
-      const payload = { user: 'admin', passHash, createdAt: new Date().toISOString() };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(payload));
+      if (!raw) {
+        const passHash = await sha256Hex('admin123');
+        const payload = { user: 'admin', passHash, createdAt: new Date().toISOString() };
+        localStorage.setItem(AUTH_KEY, JSON.stringify(payload));
+      }
+      // init auth state (attempt counter)
+      const st = authStateGet();
+      if (!localStorage.getItem(AUTH_STATE_KEY)) {
+        authStateSet({ fails: 0, lockedUntil: null, lastUser: st.lastUser || 'admin' });
+      } else {
+        renderLoginAttempts();
+      }
+    }
+
+    function setActiveUserBadge(user) {
+      const ub = $('userBadge');
+      if (!ub) return;
+      ub.textContent = `User: ${user || '—'}`;
     }
 
     function showAuthGate(show) {
@@ -2462,7 +2535,11 @@ http://localhost:8080</pre>
       gate.classList.toggle('hidden', !show);
       shell.classList.toggle('hidden', show);
       if (show) {
+        setActiveUserBadge('—');
         setLoginError('');
+        renderLoginAttempts();
+        const st = authStateGet();
+        if ($('loginUser')) $('loginUser').value = st.lastUser || '';
         $('loginPass').value = '';
         $('loginUser').focus();
       }
@@ -2479,15 +2556,34 @@ http://localhost:8080</pre>
       el.textContent = msg;
     }
 
+    function setCapsWarning(show) {
+      const el = $('capsWarning');
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+    }
+
     async function verifyLogin(user, pass) {
       const conf = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
       const inputHash = await sha256Hex(String(pass || ''));
       return conf?.user === user && conf?.passHash === inputHash;
     }
 
+    function getSessionFromStorage() {
+      // prefer sessionStorage (temporary), fallback localStorage (remember)
+      try {
+        const s1 = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+        if (s1) return { ...s1, __store: 'sessionStorage' };
+      } catch {}
+      try {
+        const s2 = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        if (s2) return { ...s2, __store: 'localStorage' };
+      } catch {}
+      return null;
+    }
+
     function isSessionValid() {
       try {
-        const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        const s = getSessionFromStorage();
         if (!s) return false;
         if (s.expiresAt && new Date(s.expiresAt).getTime() < Date.now()) return false;
         return s.loggedIn === true;
@@ -2496,33 +2592,67 @@ http://localhost:8080</pre>
       }
     }
 
-    function createSession(remember) {
-      // default: 8 jam jika remember, 1 jam jika tidak
-      const hours = remember ? 8 : 1;
+    function createSession(user, remember) {
+      const hours = remember ? AUTH_POLICY.sessionHoursRemember : AUTH_POLICY.sessionHoursTemp;
       const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ loggedIn: true, expiresAt }));
+      const payload = { loggedIn: true, user, expiresAt };
+      if (remember) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+        try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+      } else {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+        // bersihkan localStorage sesi lama agar tidak "auto login" lagi
+        localStorage.removeItem(SESSION_KEY);
+      }
     }
 
     function clearSession() {
       localStorage.removeItem(SESSION_KEY);
+      try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+      setActiveUserBadge('—');
     }
 
     async function doLogin() {
       setLoginError('');
+      renderLoginAttempts();
+      if (isLocked()) {
+        setLoginError(lockRemainingText());
+        return;
+      }
+
       const user = $('loginUser').value.trim();
       const pass = $('loginPass').value;
       if (!user || !pass) {
         setLoginError('Username dan password wajib diisi.');
         return;
       }
+
+      // remember last attempted user
+      const st0 = authStateGet();
+      authStateSet({ ...st0, lastUser: user });
+
       const ok = await verifyLogin(user, pass);
       if (!ok) {
-        setLoginError('Login gagal. Periksa username/password.');
+        const st = authStateGet();
+        const fails = (st.fails || 0) + 1;
+        const next = { ...st, fails };
+        if (fails >= AUTH_POLICY.maxAttempts) {
+          next.lockedUntil = new Date(Date.now() + AUTH_POLICY.lockMinutes * 60 * 1000).toISOString();
+          next.fails = 0; // reset counter after locking
+        }
+        authStateSet(next);
+        setLoginError(next.lockedUntil ? lockRemainingText() : 'Login gagal. Periksa username/password.');
         return;
       }
-      createSession($('rememberMe').checked);
+
+      // reset state on success
+      authStateSet({ fails: 0, lockedUntil: null, lastUser: user });
+
+      createSession(user, $('rememberMe').checked);
       showAuthGate(false);
+      setActiveUserBadge(user);
       toast('ok','Login berhasil',`Selamat datang, ${user}.`);
+
       // init aplikasi setelah login
       init().catch(() => {
         toast('error','Inisialisasi gagal','Gagal memuat database. Coba refresh halaman.');
@@ -2563,6 +2693,15 @@ http://localhost:8080</pre>
       $('btnLogin')?.addEventListener('click', doLogin);
       $('loginPass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
       $('loginUser')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+      // caps lock warning
+      $('loginPass')?.addEventListener('keyup', (e) => {
+        if (typeof e.getModifierState === 'function') setCapsWarning(e.getModifierState('CapsLock'));
+      });
+      $('loginPass')?.addEventListener('keydown', (e) => {
+        if (typeof e.getModifierState === 'function') setCapsWarning(e.getModifierState('CapsLock'));
+      });
+
       $('btnTogglePass')?.addEventListener('click', () => {
         const ip = $('loginPass');
         const isPw = ip.type === 'password';
@@ -2570,9 +2709,31 @@ http://localhost:8080</pre>
         $('btnTogglePass').textContent = isPw ? 'Sembunyi' : 'Lihat';
         ip.focus();
       });
+
       $('btnAuthHelp')?.addEventListener('click', () => {
         // buka panduan tanpa harus login
         openHelp();
+      });
+
+      $('btnChangePass')?.addEventListener('click', () => {
+        changePasswordFlow();
+      });
+
+      $('btnResetAuth')?.addEventListener('click', async () => {
+        const ok = confirm('Reset login ke default (admin / admin123)?\n\nCatatan: ini hanya reset kredensial login, tidak menghapus data WP.');
+        if (!ok) return;
+        try {
+          const passHash = await sha256Hex('admin123');
+          localStorage.setItem(AUTH_KEY, JSON.stringify({ user: 'admin', passHash, resetAt: new Date().toISOString() }));
+          authStateSet({ fails: 0, lockedUntil: null, lastUser: 'admin' });
+          $('loginUser').value = 'admin';
+          $('loginPass').value = '';
+          setLoginError('');
+          renderLoginAttempts();
+          toast('ok','Reset login','Kredensial login direset ke default.');
+        } catch {
+          toast('error','Reset login','Gagal mereset. Coba refresh halaman.');
+        }
       });
 
       // Logout button in header
@@ -2588,7 +2749,7 @@ http://localhost:8080</pre>
         showAuthGate(true);
       });
 
-      // Offer change password from help (right click alternative) - simple: double click brand
+      // Offer change password from brand
       document.querySelectorAll('.brand-badge').forEach(b => {
         b.addEventListener('dblclick', () => {
           const ok = confirm('Ubah password login?');
@@ -2597,8 +2758,13 @@ http://localhost:8080</pre>
         });
       });
 
+      // init auth state display
+      renderLoginAttempts();
+
       if (isSessionValid()) {
+        const s = getSessionFromStorage();
         showAuthGate(false);
+        setActiveUserBadge(s?.user || '—');
         init().catch(() => {
           toast('error','Inisialisasi gagal','Gagal memuat database. Coba refresh halaman.');
         });
