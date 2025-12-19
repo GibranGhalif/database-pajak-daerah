@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Database Wajib Pajak Daerah (UU 1/2022 & PP 35/2024)</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 23, 42, 0.12);
+      --border-strong: rgba(15, 23, 42, 0.18);
+      --card: rgba(255, 255, 255, 0.82);
+      --card-strong: rgba(255, 255, 255, 0.92);
+      --shadow-sm: 0 2px 10px rgba(2, 6, 23, 0.06);
+      --shadow: 0 18px 60px rgba(2, 6, 23, 0.10);
+      --shadow-lg: 0 26px 80px rgba(2, 6, 23, 0.14);
+    }
+
+    html, body { height: 100%; }
+
+    * { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background:
+        radial-gradient(900px 520px at 18% -10%, rgba(99, 102, 241, 0.16), transparent 60%),
+        radial-gradient(900px 520px at 88% 0%, rgba(14, 165, 233, 0.12), transparent 60%),
+        radial-gradient(900px 520px at 50% 110%, rgba(16, 185, 129, 0.10), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 55%, #eef2ff 100%) !important;
+      color: var(--text);
+    }
+
+    /* Subtle grain */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(0deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.02)),
+        repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.015) 0 1px, transparent 1px 11px);
+      mix-blend-mode: multiply;
+      opacity: 0.35;
+      z-index: 0;
+    }
+
+    main, header, footer { position: relative; z-index: 1; }
+
+    /* Components (CSS murni, tanpa @apply) */
+    .mono { font-variant-numeric: tabular-nums; }
+
+    .card {
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    @supports (backdrop-filter: blur(10px)) {
+      .card { backdrop-filter: blur(10px); }
+      header { backdrop-filter: blur(12px); }
+    }
+
+    .label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: rgba(15, 23, 42, 0.76);
+    }
+
+    .help {
+      font-size: 12px;
+      color: rgba(100, 116, 139, 0.95);
+    }
+
+    .input {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.90);
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.2;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(2, 6, 23, 0.04);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .15s ease;
+      outline: none;
+    }
+
+    .input:focus {
+      border-color: rgba(99, 102, 241, 0.55);
+      background: #fff;
+      box-shadow:
+        0 0 0 4px rgba(99, 102, 241, 0.14),
+        0 14px 30px rgba(2, 6, 23, 0.08);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease, filter .12s ease;
+      user-select: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      box-shadow: 0 18px 45px rgba(2, 6, 23, 0.10);
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .btn:active {
+      transform: translateY(0px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.12), var(--shadow-sm);
+    }
+
+    .btn-primary {
+      color: #fff;
+      border-color: rgba(15, 23, 42, 0.55);
+      background: linear-gradient(135deg, #0f172a 0%, #1f2937 55%, #0f172a 100%);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.24);
+    }
+
+    .btn-primary:hover { filter: brightness(1.05); }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.78);
+      border-color: rgba(15, 23, 42, 0.10);
+    }
+
+    .btn-danger {
+      color: #fff;
+      border-color: rgba(220, 38, 38, 0.55);
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      box-shadow: 0 18px 40px rgba(220, 38, 38, 0.18);
+    }
+
+    .btn-warning {
+      color: #fff;
+      border-color: rgba(245, 158, 11, 0.55);
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      box-shadow: 0 18px 40px rgba(245, 158, 11, 0.16);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: rgba(255, 255, 255, 0.70);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .tab {
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      color: rgba(15, 23, 42, 0.78);
+      border: 1px solid transparent;
+      transition: background .12s ease, border-color .12s ease, transform .12s ease, box-shadow .12s ease;
+    }
+
+    .tab:hover {
+      background: rgba(15, 23, 42, 0.04);
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+
+    .tab-active {
+      color: #fff;
+      background: linear-gradient(135deg, #0f172a 0%, #1f2937 65%, #0f172a 100%);
+      border-color: rgba(15, 23, 42, 0.55);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+    }
+
+    .kpi {
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 12px 28px rgba(2, 6, 23, 0.06);
+      padding: 16px;
+    }
+
+    /* Table polish */
+    #tbody tr { transition: background .12s ease; }
+    #tbody tr:hover { background: rgba(99, 102, 241, 0.06); }
+
+    /* Text clamp utility used in table */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+
+    /* Toast + modal micro-interactions */
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #toast:not(.hidden) .card { animation: toastIn .16s ease-out both; }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: translateY(10px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-panel { animation: modalPop .18s cubic-bezier(.16, 1, .3, 1) both; }
+    .modal-backdrop { backdrop-filter: blur(2px); }
+
+    /* Brand */
+    .brand-badge {
+      background: radial-gradient(12px 12px at 30% 25%, rgba(255,255,255,0.35), transparent 60%),
+                  linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0f172a 100%);
+      box-shadow: 0 18px 45px rgba(29, 78, 216, 0.18), inset 0 1px 0 rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .brand-badge:hover { filter: brightness(1.05); }
+
+    /* Dashboard mini-charts */
+    .donut {
+      width: 140px;
+      height: 140px;
+      border-radius: 999px;
+      position: relative;
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 60px rgba(2, 6, 23, 0.10);
+      background: conic-gradient(#e2e8f0 0 100%);
+      overflow: hidden;
+    }
+    .donut::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .dash-row-btn {
+      width: 100%;
+      text-align: left;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      background: rgba(255, 255, 255, 0.70);
+      padding: 12px;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+      box-shadow: 0 10px 24px rgba(2,6,23,0.06);
+    }
+    .dash-row-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(15, 23, 42, 0.16);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 45px rgba(2,6,23,0.10);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      body::before { display: none !important; }
+      .card { box-shadow: none !important; background: #fff !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <!-- AUTH GATE (Login) -->
+  <div id="authGate" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/35 modal-backdrop"></div>
+    <div class="relative min-h-full flex items-center justify-center p-4">
+      <div class="card w-full max-w-md p-5 md:p-6 border-slate-900/10 bg-white/80 backdrop-blur">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="brand-badge h-11 w-11 rounded-xl text-white flex items-center justify-center font-black">WP</div>
+            <div>
+              <h2 class="text-lg font-extrabold leading-tight">Login</h2>
+              <p class="text-xs text-slate-600">Akses aplikasi Database Wajib Pajak Daerah (offline).</p>
+            </div>
+          </div>
+          <span class="chip bg-white/80 border-slate-200 text-slate-700">Mode: Lokal</span>
+        </div>
+
+        <div class="mt-5 space-y-3">
+          <div>
+            <label class="label">Username</label>
+            <input id="loginUser" class="input" autocomplete="username" placeholder="contoh: admin" />
+          </div>
+
+          <div>
+            <label class="label">Password</label>
+            <div class="relative">
+              <input id="loginPass" class="input pr-24" type="password" autocomplete="current-password" placeholder="••••••••" />
+              <button id="btnTogglePass" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost px-3 py-1.5">Lihat</button>
+            </div>
+            <p class="help mt-1">Default pertama kali: <span class="font-semibold">admin / admin123</span> (silakan ubah untuk pemakaian internal).</p>
+          </div>
+
+          <div class="flex items-center justify-between gap-3">
+            <label class="flex items-center gap-2 text-xs text-slate-700">
+              <input id="rememberMe" type="checkbox" class="accent-slate-900" />
+              Ingat sesi di perangkat ini
+            </label>
+            <button id="btnAuthHelp" type="button" class="btn btn-ghost px-3 py-1.5">Panduan</button>
+          </div>
+
+          <div id="loginError" class="hidden rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs font-semibold px-3 py-2"></div>
+
+          <button id="btnLogin" class="btn btn-primary w-full" type="button">Masuk</button>
+
+          <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-3">
+            <p class="text-[11px] text-slate-700 font-semibold">Catatan keamanan</p>
+            <p class="text-[11px] text-slate-600 mt-1">Login ini bersifat lokal (client-side) untuk membatasi akses pada perangkat. Untuk penggunaan produksi multi-user, gunakan versi server dengan autentikasi resmi.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="hidden">
+  <header class="no-print sticky top-0 z-40 border-b border-slate-200 bg-white/75 backdrop-blur shadow-[0_10px_30px_rgba(2,6,23,0.06)]">
+    <div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-start gap-3">
+        <div class="brand-badge h-11 w-11 rounded-xl text-white flex items-center justify-center font-black">WP</div>
+        <div>
+          <h1 class="text-lg md:text-xl font-extrabold leading-tight">Database Wajib Pajak Daerah</h1>
+          <p class="text-xs md:text-sm text-slate-600">
+            Entri & pengelolaan data wajib pajak daerah (rujukan: <span class="font-semibold">UU No. 1 Tahun 2022</span> tentang HKPD dan <span class="font-semibold">PP No. 35 Tahun 2024</span>).
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <button id="tabDashboard" class="tab" data-tab="dashboard">Dashboard</button>
+        <button id="tabEntri" class="tab tab-active" data-tab="entri">Entri Data</button>
+        <button id="tabDaftar" class="tab" data-tab="daftar">Daftar & Pencarian</button>
+        <button id="tabImex" class="tab" data-tab="imex">Impor/Ekspor</button>
+        <button id="tabRef" class="tab" data-tab="referensi">Referensi</button>
+        <span class="hidden md:inline-block w-px h-6 bg-slate-200 mx-1 self-center"></span>
+        <button id="btnHelp" class="btn btn-ghost" type="button" title="Panduan penggunaan & cara hosting">Panduan Web</button>
+        <button id="btnLogout" class="btn btn-ghost" type="button" title="Keluar">Keluar</button>
+        <span id="storageBadge" class="chip bg-white/80 border-slate-200 text-slate-700">Penyimpanan: —</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-6">
+    <!-- Toast -->
+    <div id="toast" class="no-print fixed right-4 top-20 z-50 hidden">
+      <div class="card px-4 py-3 border-slate-900/10 bg-white/80 backdrop-blur">
+        <div class="flex items-start gap-3">
+          <div id="toastDot" class="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500"></div>
+          <div>
+            <p id="toastTitle" class="text-sm font-bold">Info</p>
+            <p id="toastMsg" class="text-xs text-slate-600">Pesan</p>
+          </div>
+          <button class="ml-2 text-slate-400 hover:text-slate-700" onclick="hideToast()" aria-label="Tutup">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: DASHBOARD -->
+    <section id="view-dashboard" class="hidden space-y-6">
+      <div class="card p-5 md:p-6">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+          <div>
+            <h2 class="text-base md:text-lg font-extrabold">Dashboard</h2>
+            <p class="text-xs md:text-sm text-slate-600">Ringkasan cepat database wajib pajak (lokal), termasuk status, kepatuhan, sebaran jenis pajak, dan aktivitas terbaru.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btnDashRefresh" class="btn btn-ghost" type="button">Perbarui</button>
+            <button id="btnDashGoEntri" class="btn btn-primary" type="button">Tambah Data</button>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-8 space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="kpi">
+                <p class="text-xs text-slate-600">Total WP</p>
+                <p id="dashTotal" class="mono text-2xl font-black">0</p>
+                <p id="dashLastUpdated" class="help mt-1">—</p>
+              </div>
+              <div class="kpi">
+                <p class="text-xs text-slate-600">Aktif</p>
+                <p id="dashAktif" class="mono text-2xl font-black">0</p>
+                <p class="help mt-1">Proporsi aktif dari total.</p>
+              </div>
+              <div class="kpi">
+                <p class="text-xs text-slate-600">Kepatuhan Data</p>
+                <p id="dashCompleteness" class="mono text-2xl font-black">0%</p>
+                <p class="help mt-1">Estimasi kelengkapan field utama.</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-extrabold">Status WP</h3>
+                  <span id="dashStatusLegend" class="chip bg-white border-slate-200 text-slate-700">—</span>
+                </div>
+                <div class="mt-4 flex flex-col sm:flex-row gap-4 sm:items-center">
+                  <div id="dashDonut" class="donut">
+                    <div class="donut-center">
+                      <div id="dashDonutPct" class="mono text-xl font-black">0%</div>
+                      <div class="text-[11px] text-slate-600">Aktif</div>
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <span class="h-2.5 w-2.5 rounded-full" style="background:#10b981"></span>
+                          <span class="text-xs font-semibold text-slate-700">Aktif</span>
+                        </div>
+                        <span id="dashStatAktif" class="text-xs text-slate-600 mono">0</span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <span class="h-2.5 w-2.5 rounded-full" style="background:#94a3b8"></span>
+                          <span class="text-xs font-semibold text-slate-700">Tidak Aktif</span>
+                        </div>
+                        <span id="dashStatTidakAktif" class="text-xs text-slate-600 mono">0</span>
+                      </div>
+                    </div>
+                    <div class="mt-4">
+                      <button id="btnDashGoDaftar" class="btn btn-ghost w-full" type="button">Lihat daftar & pencarian</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-extrabold">Top Jenis Pajak</h3>
+                  <span id="dashTopInfo" class="chip bg-white border-slate-200 text-slate-700">—</span>
+                </div>
+                <div id="dashTopTypes" class="mt-4 space-y-2"></div>
+                <div class="mt-3 help">Menampilkan hingga 6 jenis pajak teratas berdasarkan jumlah WP.</div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold">Tren Pendaftaran (6 bulan terakhir)</h3>
+                <span id="dashTrendInfo" class="chip bg-white border-slate-200 text-slate-700">—</span>
+              </div>
+              <div class="mt-4 overflow-x-auto">
+                <div id="dashTrendBars" class="min-w-[520px] grid grid-cols-6 gap-3 items-end"></div>
+              </div>
+              <div class="mt-2 help">Berdasarkan field <span class="font-semibold">Tanggal Daftar</span> (bukan createdAt).</div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 space-y-6">
+            <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold">Aktivitas Terbaru</h3>
+                <span id="dashRecentCount" class="chip bg-white border-slate-200 text-slate-700">0</span>
+              </div>
+              <div id="dashRecent" class="mt-3 space-y-2"></div>
+              <div class="mt-3">
+                <button id="btnDashExportJson" class="btn btn-ghost w-full" type="button">Backup JSON sekarang</button>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+              <h3 class="text-sm font-extrabold">Kualitas Data (cek cepat)</h3>
+              <div id="dashQuality" class="mt-3 space-y-2"></div>
+              <p class="help mt-3">Ini hanya indikator administratif, bukan penetapan resmi.</p>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+              <h3 class="text-sm font-extrabold">Aksi Cepat</h3>
+              <div class="mt-3 grid grid-cols-1 gap-2">
+                <button id="btnDashSeed" class="btn btn-ghost" type="button">Tambahkan Contoh Data</button>
+                <button id="btnDashWipe" class="btn btn-danger" type="button">Hapus Semua Data (Lokal)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ENTRI -->
+    <section id="view-entri" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8">
+          <div class="card p-5 md:p-6">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+              <div>
+                <h2 class="text-base md:text-lg font-extrabold">Form Entri Wajib Pajak</h2>
+                <p class="text-xs md:text-sm text-slate-600">Isikan identitas wajib pajak, objek pajak, serta rincian sesuai jenis pajak.</p>
+              </div>
+              <div class="flex gap-2">
+                <button id="btnReset" class="btn btn-ghost" type="button">Reset</button>
+                <button id="btnPrint" class="btn btn-ghost" type="button" title="Cetak halaman (untuk dokumentasi)">Cetak</button>
+              </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="label">Jenis Pajak Daerah <span class="text-red-600">*</span></label>
+                <select id="jenisPajak" class="input"></select>
+                <p class="help mt-1">Daftar disesuaikan dengan permintaan (termasuk PBJT & opsen).</p>
+              </div>
+              <div>
+                <label class="label">Kategori Wajib Pajak <span class="text-red-600">*</span></label>
+                <select id="kategori" class="input">
+                  <option value="Orang Pribadi">Orang Pribadi</option>
+                  <option value="Badan">Badan</option>
+                  <option value="Instansi/Organisasi">Instansi/Organisasi</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="label">Nama Wajib Pajak <span class="text-red-600">*</span></label>
+                <input id="nama" class="input" placeholder="Nama lengkap" />
+              </div>
+              <div>
+                <label class="label">Nama Usaha / Merek (opsional)</label>
+                <input id="namaUsaha" class="input" placeholder="Nama usaha (jika ada)" />
+              </div>
+
+              <div>
+                <label class="label">NIK (opsional)</label>
+                <input id="nik" class="input" inputmode="numeric" placeholder="16 digit (jika orang pribadi)" />
+                <p class="help mt-1">Untuk keperluan administrasi; penetapan resmi tetap mengikuti ketentuan pemda.</p>
+              </div>
+              <div>
+                <label class="label">NPWP (opsional)</label>
+                <input id="npwp" class="input" placeholder="Format bebas" />
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="label">Alamat Wajib Pajak <span class="text-red-600">*</span></label>
+                <textarea id="alamat" class="input" rows="2" placeholder="Jalan, RT/RW, kelurahan, kecamatan, kab/kota"></textarea>
+              </div>
+
+              <div>
+                <label class="label">No. Telepon/HP (opsional)</label>
+                <input id="telp" class="input" placeholder="08xxxxxxxxxx" />
+              </div>
+              <div>
+                <label class="label">Email (opsional)</label>
+                <input id="email" class="input" type="email" placeholder="nama@domain" />
+              </div>
+
+              <div>
+                <label class="label">Tanggal Daftar <span class="text-red-600">*</span></label>
+                <input id="tglDaftar" class="input" type="date" />
+              </div>
+              <div>
+                <label class="label">Status WP <span class="text-red-600">*</span></label>
+                <select id="status" class="input">
+                  <option value="Aktif">Aktif</option>
+                  <option value="Tidak Aktif">Tidak Aktif</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="label">Status Kepatuhan <span class="text-red-600">*</span></label>
+                <select id="statusKepatuhan" class="input">
+                  <option value="Patuh">Patuh</option>
+                  <option value="Tidak Patuh">Tidak Patuh</option>
+                </select>
+                <p class="help mt-1">Indikator administratif internal (mis. kepatuhan pelaporan/penyampaian data), bukan penetapan resmi.</p>
+              </div>
+              <div>
+                <label class="label">Alamat/Lokasi Objek Pajak (opsional)</label>
+                <textarea id="alamatObjek" class="input" rows="2" placeholder="Jika berbeda dengan alamat WP"></textarea>
+              </div>
+
+              <div class="md:col-span-2">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-extrabold">Rincian Sesuai Jenis Pajak</p>
+                    <p class="help">Field berikut berubah sesuai jenis pajak yang dipilih.</p>
+                  </div>
+                  <span id="badgeWajib" class="chip border-slate-200 text-slate-700 bg-slate-50">
+                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                    <span>Validasi: Standar</span>
+                  </span>
+                </div>
+                <div id="specialFields" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="label">Keterangan (opsional)</label>
+                <textarea id="keterangan" class="input" rows="2" placeholder="Catatan internal / informasi tambahan"></textarea>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <span id="modeLabel" class="chip bg-slate-50 border-slate-200 text-slate-700">
+                  <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  <span>Mode: Tambah</span>
+                </span>
+                <span id="storageHelp" class="help">Data tersimpan lokal di browser.</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button id="btnCancelEdit" class="btn btn-ghost hidden" type="button">Batal Edit</button>
+                <button id="btnSubmit" class="btn btn-primary" type="button">Simpan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-4 space-y-6">
+          <div class="card p-5 md:p-6">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold">Ringkasan</h3>
+              <button id="btnRefreshKpi" class="btn btn-ghost px-3 py-1.5" type="button">Perbarui</button>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-3">
+              <div class="kpi">
+                <p class="text-xs text-slate-600">Total WP</p>
+                <p id="kpiTotal" class="mono text-2xl font-black">0</p>
+              </div>
+              <div class="kpi">
+                <p class="text-xs text-slate-600">Aktif</p>
+                <p id="kpiAktif" class="mono text-2xl font-black">0</p>
+              </div>
+              <div class="kpi col-span-2">
+                <p class="text-xs text-slate-600">Jenis pajak terbanyak</p>
+                <p id="kpiTopType" class="text-sm font-extrabold">-</p>
+                <div class="mt-2 h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div id="kpiBar" class="h-full bg-slate-900" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4">
+              <p class="text-xs font-semibold text-slate-700">Distribusi cepat</p>
+              <div id="kpiDist" class="mt-2 space-y-2"></div>
+            </div>
+          </div>
+
+          <div class="card p-5 md:p-6">
+            <h3 class="text-sm font-extrabold">Aksi Cepat</h3>
+            <div class="mt-3 grid grid-cols-1 gap-2">
+              <button id="btnGoDaftar" class="btn btn-ghost" type="button">Buka Daftar & Pencarian</button>
+              <button id="btnSeed" class="btn btn-ghost" type="button">Tambahkan Contoh Data</button>
+              <button id="btnWipe" class="btn btn-danger" type="button">Hapus Semua Data (Lokal)</button>
+            </div>
+            <p class="help mt-3">Gunakan contoh data untuk uji coba; hapus semua akan mengosongkan database lokal di perangkat ini.</p>
+          </div>
+
+          <div class="card p-5 md:p-6">
+            <h3 class="text-sm font-extrabold">Catatan Kepatuhan</h3>
+            <ul class="mt-2 list-disc pl-4 text-xs text-slate-600 space-y-1">
+              <li>Aplikasi ini bersifat <span class="font-semibold">administratif</span> dan <span class="font-semibold">offline</span> (tidak mengirim data ke server).</li>
+              <li>Struktur field merupakan <span class="font-semibold">template</span>. Penetapan, tarif, dasar pengenaan, dan masa pajak mengikuti Perda/Perkada setempat sesuai kerangka UU 1/2022 & PP 35/2024.</li>
+              <li>Pastikan perlindungan data pribadi (akses perangkat, backup, dan kontrol pengguna).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: DAFTAR -->
+    <section id="view-daftar" class="hidden space-y-6">
+      <div class="card p-5 md:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div>
+            <h2 class="text-base md:text-lg font-extrabold">Daftar Wajib Pajak</h2>
+            <p class="text-xs md:text-sm text-slate-600">Cari, filter, lihat detail, edit, dan hapus.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="flex-1 min-w-[220px]">
+              <label class="label">Pencarian</label>
+              <input id="q" class="input" placeholder="Nama / NPWP / NIK / NOP / No Polisi" />
+            </div>
+            <div class="min-w-[220px]">
+              <label class="label">Filter Jenis Pajak</label>
+              <select id="filterJenis" class="input"></select>
+            </div>
+            <div class="min-w-[180px]">
+              <label class="label">Status WP</label>
+              <select id="filterStatus" class="input">
+                <option value="">Semua</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Tidak Aktif">Tidak Aktif</option>
+              </select>
+            </div>
+            <div class="min-w-[190px]">
+              <label class="label">Kepatuhan</label>
+              <select id="filterKepatuhan" class="input">
+                <option value="">Semua</option>
+                <option value="Patuh">Patuh</option>
+                <option value="Tidak Patuh">Tidak Patuh</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="chip bg-slate-50 border-slate-200 text-slate-700">
+              <span class="h-2 w-2 rounded-full bg-slate-900"></span>
+              <span id="countLabel">0 data</span>
+            </span>
+            <button id="btnClearFilters" class="btn btn-ghost px-3 py-1.5" type="button">Bersihkan Filter</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btnExportCsv" class="btn btn-ghost" type="button">Ekspor CSV</button>
+            <button id="btnExportJson" class="btn btn-ghost" type="button">Ekspor JSON</button>
+          </div>
+        </div>
+
+        <div class="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white/80 backdrop-blur">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-700">
+              <tr>
+                <th class="text-left px-4 py-3 font-extrabold">Jenis Pajak</th>
+                <th class="text-left px-4 py-3 font-extrabold">Nama WP</th>
+                <th class="text-left px-4 py-3 font-extrabold">Identitas</th>
+                <th class="text-left px-4 py-3 font-extrabold">Status</th>
+                <th class="text-left px-4 py-3 font-extrabold">Daftar</th>
+                <th class="text-right px-4 py-3 font-extrabold">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div class="help">Tips: klik <span class="font-semibold">Detail</span> untuk melihat semua field termasuk rincian per jenis pajak.</div>
+          <div class="flex items-center gap-2">
+            <button id="btnPrev" class="btn btn-ghost px-3 py-2" type="button">←</button>
+            <span id="pageLabel" class="chip bg-white border-slate-200 text-slate-700">Hal 1</span>
+            <button id="btnNext" class="btn btn-ghost px-3 py-2" type="button">→</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: IMEX -->
+    <section id="view-imex" class="hidden space-y-6">
+      <div class="card p-5 md:p-6">
+        <h2 class="text-base md:text-lg font-extrabold">Impor / Ekspor Data</h2>
+        <p class="text-xs md:text-sm text-slate-600">Cadangkan data atau pindahkan antar perangkat menggunakan file JSON/CSV.</p>
+
+        <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+            <h3 class="text-sm font-extrabold">Ekspor</h3>
+            <p class="help mt-1">Ekspor JSON untuk backup lengkap; CSV untuk olah data di spreadsheet.</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button id="btnExportJson2" class="btn btn-primary" type="button">Unduh JSON</button>
+              <button id="btnExportCsv2" class="btn btn-ghost" type="button">Unduh CSV</button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+            <h3 class="text-sm font-extrabold">Impor JSON</h3>
+            <p class="help mt-1">Format impor: file .json hasil ekspor aplikasi ini (array objek).</p>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="label">Mode Impor</label>
+                <select id="importMode" class="input">
+                  <option value="merge">Gabung (merge)</option>
+                  <option value="replace">Ganti semua (replace)</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">Pilih File JSON</label>
+                <input id="importFile" type="file" accept="application/json" class="input" />
+              </div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button id="btnImport" class="btn btn-primary" type="button">Impor</button>
+              <button id="btnValidate" class="btn btn-ghost" type="button">Cek Format</button>
+            </div>
+            <pre id="importLog" class="mt-3 text-xs bg-white border border-slate-200 rounded-xl p-3 max-h-56 overflow-auto"></pre>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-extrabold">Backup cepat</h3>
+          <p class="help mt-1">Salin-tempel JSON ini jika dibutuhkan (mis. untuk chat/email internal).</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button id="btnCopyJson" class="btn btn-ghost" type="button">Salin JSON ke Clipboard</button>
+            <button id="btnRestoreFromPaste" class="btn btn-warning" type="button">Pulihkan dari Tempelan (Replace)</button>
+          </div>
+          <textarea id="pasteArea" class="input mt-3" rows="6" placeholder="Tempel JSON di sini..."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: REFERENSI -->
+    <section id="view-referensi" class="hidden space-y-6">
+      <div class="card p-5 md:p-6">
+        <h2 class="text-base md:text-lg font-extrabold">Referensi Regulasi (Ringkas)</h2>
+        <p class="text-xs md:text-sm text-slate-600">
+          Aplikasi ini menampilkan daftar jenis pajak yang Anda minta dan menyediakan template data administratif.
+          Untuk implementasi resmi, pastikan merujuk Perda/Perkada setempat yang dibentuk sesuai kerangka UU/PP.
+        </p>
+
+        <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-extrabold">UU No. 1 Tahun 2022 (HKPD)</h3>
+            <ul class="mt-2 list-disc pl-4 text-xs text-slate-700 space-y-1">
+              <li>Mengatur kerangka <span class="font-semibold">pajak daerah</span> dan <span class="font-semibold">retribusi daerah</span>, termasuk konsolidasi jenis dan nomenklatur tertentu.</li>
+              <li>Memperkenalkan/menegaskan <span class="font-semibold">PBJT</span> (Pajak Barang dan Jasa Tertentu) dan ruang bagi <span class="font-semibold">opsen</span> atas pajak kendaraan tertentu.</li>
+              <li>Pengaturan rinci (tarif, DPP, masa pajak, tata cara) diturunkan melalui PP dan ditetapkan melalui Perda/Perkada.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-extrabold">PP No. 35 Tahun 2024</h3>
+            <ul class="mt-2 list-disc pl-4 text-xs text-slate-700 space-y-1">
+              <li>Memberi ketentuan pelaksanaan yang lebih operasional terkait pajak/retribusi daerah, termasuk penguatan aspek administrasi pemungutan.</li>
+              <li>Menjadi rujukan penyusunan Perda/Perkada (bersama ketentuan teknis lain yang relevan).</li>
+              <li>Dalam praktik, detail penerapan tetap memerlukan <span class="font-semibold">dokumen lokal</span> (Perda, Perkada, SOP, sistem informasi pemda).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-extrabold">Jenis pajak yang didukung di aplikasi ini</h3>
+          <div id="jenisList" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+          <p class="help mt-3">Catatan: jika pemda Anda memakai kode/penamaan berbeda, Anda dapat menyesuaikan melalui ekspor JSON dan edit manual (atau minta saya menambahkan editor konfigurasi).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detail Modal -->
+    <div id="modal" class="fixed inset-0 z-50 hidden">
+      <div class="modal-backdrop absolute inset-0 bg-black/40" id="modalBackdrop"></div>
+      <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center p-0 md:p-6">
+        <div class="modal-panel bg-white w-full md:max-w-3xl md:rounded-2xl rounded-t-2xl border border-slate-200 shadow-xl max-h-[85vh] overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-600">Detail Wajib Pajak</p>
+              <h3 id="modalTitle" class="text-base font-extrabold">-</h3>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnModalEdit" class="btn btn-ghost px-3 py-2" type="button">Edit</button>
+              <button id="btnModalClose" class="btn btn-ghost px-3 py-2" type="button">Tutup</button>
+            </div>
+          </div>
+          <div id="modalBody" class="p-4 overflow-auto max-h-[70vh]"></div>
+          <div class="p-4 border-t border-slate-200 flex items-center justify-between">
+            <span class="help">ID: <span id="modalId" class="mono">-</span></span>
+            <button id="btnModalPrint" class="btn btn-ghost" type="button">Cetak Detail</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal (Panduan Web) -->
+    <div id="helpModal" class="fixed inset-0 z-50 hidden">
+      <div class="modal-backdrop absolute inset-0 bg-black/40" id="helpBackdrop"></div>
+      <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center p-0 md:p-6">
+        <div class="modal-panel bg-white w-full md:max-w-3xl md:rounded-2xl rounded-t-2xl border border-slate-200 shadow-xl max-h-[85vh] overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-600">Panduan</p>
+              <h3 class="text-base font-extrabold">Aplikasi Database Wajib Pajak Daerah (Berbasis Web)</h3>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnHelpClose" class="btn btn-ghost px-3 py-2" type="button">Tutup</button>
+            </div>
+          </div>
+          <div class="p-4 overflow-auto max-h-[70vh]">
+            <div class="space-y-4 text-sm">
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <p class="font-extrabold">Cara pakai (singkat)</p>
+                <ol class="mt-2 list-decimal pl-5 space-y-1 text-slate-700">
+                  <li>Pilih <span class="font-semibold">Jenis Pajak</span>, isi identitas WP, alamat, <span class="font-semibold">status WP</span>, <span class="font-semibold">status kepatuhan</span>, dan tanggal daftar.</li>
+                  <li>Isi bagian <span class="font-semibold">Rincian Sesuai Jenis Pajak</span> (field berubah otomatis mengikuti jenis pajak).</li>
+                  <li>Klik <span class="font-semibold">Simpan</span>. Data tersimpan lokal di browser (IndexedDB/localStorage, tergantung dukungan perangkat).</li>
+                  <li>Buka tab <span class="font-semibold">Daftar & Pencarian</span> untuk cari/filter, lihat detail, edit, hapus.</li>
+                  <li>Gunakan tab <span class="font-semibold">Impor/Ekspor</span> untuk backup JSON/CSV atau pindah perangkat.</li>
+                </ol>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="font-extrabold">Catatan penting (offline & privasi)</p>
+                <ul class="mt-2 list-disc pl-5 space-y-1 text-slate-700">
+                  <li>Aplikasi ini <span class="font-semibold">tidak mengirim data ke server</span>. Data tersimpan di perangkat/browser yang digunakan.</li>
+                  <li>Jika komputer dibersihkan cache/site-data, data dapat hilang. Lakukan <span class="font-semibold">backup JSON</span> secara berkala.</li>
+                  <li>Untuk penggunaan multi-user/produksi, pertimbangkan versi dengan <span class="font-semibold">database server, login, otorisasi, audit log, dan enkripsi</span>.</li>
+                </ul>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <p class="font-extrabold">Cara menjalankan sebagai web</p>
+                <div class="mt-2 space-y-3 text-slate-700">
+                  <div>
+                    <p class="font-semibold">Opsi A — Langsung (paling mudah)</p>
+                    <p class="text-sm">Buka file <span class="mono">index.html</span> dengan browser (Chrome/Edge/Firefox). Cocok untuk 1 perangkat.</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold">Opsi B — Local server (disarankan)</p>
+                    <p class="text-sm">Agar terasa seperti web (URL http://), jalankan server statis:</p>
+                    <pre class="mt-2 text-xs bg-white border border-slate-200 rounded-xl p-3 overflow-auto"># Python
+python -m http.server 8080
+
+# lalu buka
+http://localhost:8080</pre>
+                  </div>
+                  <div>
+                    <p class="font-semibold">Opsi C — Hosting/Deploy</p>
+                    <ul class="mt-1 list-disc pl-5 space-y-1 text-sm">
+                      <li><span class="font-semibold">GitHub Pages</span>: upload <span class="mono">index.html</span> ke repo, aktifkan Pages.</li>
+                      <li><span class="font-semibold">Netlify/Vercel</span>: drag & drop folder atau deploy dari repo.</li>
+                      <li><span class="font-semibold">Server pemda/intranet</span>: taruh file pada web server internal (IIS/Apache/Nginx).</li>
+                    </ul>
+                    <p class="text-xs text-slate-600 mt-2">Catatan: mode ini tetap menyimpan data per-browser, kecuali Anda membuat versi terhubung server.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="font-extrabold">Rujukan regulasi</p>
+                <p class="mt-1 text-slate-700 text-sm">Template field mengacu kerangka <span class="font-semibold">UU No. 1 Tahun 2022 (HKPD)</span> dan <span class="font-semibold">PP No. 35 Tahun 2024</span>, namun implementasi resmi (tarif, DPP, masa pajak, SOP) mengikuti Perda/Perkada setempat.</p>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 border-t border-slate-200 flex items-center justify-between">
+            <span class="help">Tip: lakukan <span class="font-semibold">Ekspor JSON</span> sebelum pindah perangkat.</span>
+            <button id="btnHelpGoImex" class="btn btn-primary" type="button">Buka Impor/Ekspor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="no-print mt-10 pb-10 text-center text-xs text-slate-500">
+      <p>Data disimpan di perangkat Anda (IndexedDB/localStorage). Login bersifat lokal (client-side). Untuk penggunaan produksi, pertimbangkan database server, autentikasi, audit log, dan enkripsi.</p>
+    </footer>
+  </main>
+
+  <script>
+    // =============== CONFIG ===============
+    const STORAGE_KEY = 'wpd_db_v1';
+
+    // =============== DATABASE (IndexedDB, fallback localStorage) ===============
+    // Catatan: aplikasi ini tetap 100% client-side. "Database" berarti penyimpanan lokal di browser.
+    const DB_NAME = 'wpd_db';
+    const DB_VERSION = 1;
+    const DB_STORE = 'records';
+
+    let __db = null;
+    let __storageMode = 'localStorage';
+
+    function hasIndexedDB() {
+      return typeof indexedDB !== 'undefined';
+    }
+
+    function idbOpen() {
+      return new Promise((resolve, reject) => {
+        if (!hasIndexedDB()) return reject(new Error('IndexedDB tidak tersedia.'));
+
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(DB_STORE)) {
+            db.createObjectStore(DB_STORE, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error('Gagal membuka IndexedDB'));
+      });
+    }
+
+    function idbTx(mode = 'readonly') {
+      const tx = __db.transaction(DB_STORE, mode);
+      return tx.objectStore(DB_STORE);
+    }
+
+    function idbGetAll() {
+      return new Promise((resolve, reject) => {
+        const store = idbTx('readonly');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error || new Error('Gagal membaca data (getAll)'));
+      });
+    }
+
+    function idbPutMany(arr) {
+      return new Promise((resolve, reject) => {
+        const tx = __db.transaction(DB_STORE, 'readwrite');
+        const store = tx.objectStore(DB_STORE);
+        arr.forEach(r => store.put(r));
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error || new Error('Gagal menyimpan data (putMany)'));
+      });
+    }
+
+    function idbClear() {
+      return new Promise((resolve, reject) => {
+        const tx = __db.transaction(DB_STORE, 'readwrite');
+        const store = tx.objectStore(DB_STORE);
+        store.clear();
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error || new Error('Gagal menghapus data (clear)'));
+      });
+    }
+
+    // LocalStorage fallback wrappers
+    function lsLoadRaw() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+
+    function lsSaveRaw(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    async function dbInit() {
+      // Try IndexedDB first
+      try {
+        __db = await idbOpen();
+        __storageMode = 'IndexedDB';
+      } catch {
+        __db = null;
+        __storageMode = 'localStorage';
+      }
+      const badge = document.getElementById('storageBadge');
+      if (badge) badge.textContent = `Penyimpanan: ${__storageMode}`;
+      const help = document.getElementById('storageHelp');
+      if (help) help.textContent = `Data tersimpan lokal di browser (${__storageMode}).`;
+
+      // Migration helper: if IndexedDB is active and empty, but localStorage has data, offer to migrate.
+      if (__storageMode === 'IndexedDB' && __db) {
+        try {
+          const idbData = await idbGetAll();
+          const lsData = lsLoadRaw();
+          if ((idbData?.length || 0) === 0 && (lsData?.length || 0) > 0) {
+            const ok = confirm(`Ditemukan ${(lsData.length)} data lama di localStorage.\n\nMau migrasikan ke database browser (IndexedDB) agar penyimpanan lebih kuat?\n\nCatatan: data localStorage tidak dihapus.`);
+            if (ok) {
+              await idbPutMany(migrateRecords(lsData));
+              toast('ok','Migrasi','Data localStorage berhasil disalin ke IndexedDB.');
+            }
+          }
+        } catch {
+          // ignore migration errors
+        }
+      }
+    }
+
+    async function dbLoadAll() {
+      try {
+        if (__storageMode === 'IndexedDB' && __db) {
+          const arr = await idbGetAll();
+          return migrateRecords(arr);
+        }
+        return migrateRecords(lsLoadRaw());
+      } catch {
+        return [];
+      }
+    }
+
+    async function dbSaveAll(arr) {
+      const normalized = migrateRecords(arr);
+      if (__storageMode === 'IndexedDB' && __db) {
+        // full replace: clear then put many
+        await idbClear();
+        await idbPutMany(normalized);
+      } else {
+        lsSaveRaw(normalized);
+      }
+      return true;
+    }
+
+    async function dbWipeAll() {
+      if (__storageMode === 'IndexedDB' && __db) {
+        await idbClear();
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    const TAX_TYPES = [
+      'Pajak Reklame',
+      'Pajak Air Tanah',
+      'Pajak Sarang Burung Walet',
+      'Pajak Mineral Bukan Logam dan Batuan',
+      'Pajak Bumi dan Bangunan',
+      'BPHTB',
+      'PBJT - Makanan dan Minuman',
+      'PBJT - Tenaga Listrik',
+      'PBJT - Perhotelan',
+      'PBJT - Parkir',
+      'PBJT - Kesenian dan Hiburan',
+      'Opsen Pajak Kendaraan Bermotor',
+      'Opsen Bea Balik Nama Kendaraan Bermotor'
+    ];
+
+    // Template field dinamis per jenis pajak (administratif; dapat disesuaikan)
+    const TYPE_FIELDS = {
+      'Pajak Reklame': [
+        { key: 'jenisReklame', label: 'Jenis Reklame', type: 'select', options: ['Papan/Billboard', 'Spanduk', 'Videotron/LED', 'Neon Box', 'Reklame Berjalan', 'Lainnya'], required: true },
+        { key: 'ukuran', label: 'Ukuran (m² / dimensi)', type: 'text', placeholder: 'Contoh: 4 x 6 m', required: true },
+        { key: 'jumlah', label: 'Jumlah Unit', type: 'number', placeholder: '1', min: 0 },
+        { key: 'masaTayang', label: 'Masa Tayang', type: 'text', placeholder: 'Contoh: 30 hari / 1 bulan', required: true },
+        { key: 'nilaiSewa', label: 'Nilai Sewa/Dasar Pengenaan (Rp)', type: 'number', placeholder: '0', min: 0 }
+      ],
+      'Pajak Air Tanah': [
+        { key: 'noIzin', label: 'No. Izin/SIPA (opsional)', type: 'text' },
+        { key: 'jenisPenggunaan', label: 'Jenis Penggunaan', type: 'select', options: ['Industri', 'Niaga', 'Hotel/Restoran', 'Perkantoran', 'Rumah Tangga', 'Lainnya'], required: true },
+        { key: 'jumlahSumur', label: 'Jumlah Sumur', type: 'number', placeholder: '0', min: 0 },
+        { key: 'volumeM3', label: 'Perkiraan Volume (m³/periode)', type: 'number', placeholder: '0', min: 0, required: true },
+        { key: 'titikKoordinat', label: 'Koordinat (opsional)', type: 'text', placeholder: '-7.123, 110.123' }
+      ],
+      'Pajak Sarang Burung Walet': [
+        { key: 'lokasiGedung', label: 'Lokasi Gedung', type: 'text', required: true },
+        { key: 'luasBangunan', label: 'Luas Bangunan (m²)', type: 'number', min: 0 },
+        { key: 'perkiraanProduksi', label: 'Perkiraan Produksi (kg/periode)', type: 'number', min: 0 },
+        { key: 'metodeUsaha', label: 'Metode Usaha', type: 'select', options: ['Budidaya', 'Pengumpulan', 'Lainnya'] }
+      ],
+      'Pajak Mineral Bukan Logam dan Batuan': [
+        { key: 'jenisMineral', label: 'Jenis Mineral/Material', type: 'select', options: ['Pasir', 'Batu', 'Kerikil', 'Tanah urug', 'Batu kapur', 'Lainnya'], required: true },
+        { key: 'lokasiTambang', label: 'Lokasi Pengambilan', type: 'text', required: true },
+        { key: 'volume', label: 'Volume Produksi (m³/ton per periode)', type: 'number', min: 0, required: true },
+        { key: 'dokumen', label: 'Dokumen Pendukung (opsional)', type: 'text', placeholder: 'IUP/izin, nota, dll.' }
+      ],
+      'Pajak Bumi dan Bangunan': [
+        { key: 'nop', label: 'NOP (Nomor Objek Pajak)', type: 'text', required: true, placeholder: 'Contoh: 33.12.123.456.789-0123.0' },
+        { key: 'luasTanah', label: 'Luas Tanah (m²)', type: 'number', min: 0, required: true },
+        { key: 'luasBangunan', label: 'Luas Bangunan (m²)', type: 'number', min: 0 },
+        { key: 'njopTanah', label: 'NJOP Tanah (Rp)', type: 'number', min: 0 },
+        { key: 'njopBangunan', label: 'NJOP Bangunan (Rp)', type: 'number', min: 0 },
+        { key: 'pemanfaatan', label: 'Peruntukan', type: 'select', options: ['Perumahan', 'Perdagangan', 'Industri', 'Perkebunan/Pertanian', 'Fasilitas Umum', 'Lainnya'], required: true }
+      ],
+      'BPHTB': [
+        { key: 'nop', label: 'NOP (jika terkait)', type: 'text', placeholder: 'Opsional tergantung objek' },
+        { key: 'jenisPerolehan', label: 'Jenis Perolehan Hak', type: 'select', options: ['Jual beli', 'Hibah', 'Waris', 'Tukar menukar', 'Lelang', 'Inbreng', 'Lainnya'], required: true },
+        { key: 'nilaiPerolehan', label: 'Nilai Perolehan Objek Pajak (Rp)', type: 'number', min: 0, required: true },
+        { key: 'npoptkp', label: 'NPOPTKP (Rp) (opsional)', type: 'number', min: 0 },
+        { key: 'tglAkta', label: 'Tanggal Akta/Perolehan', type: 'date', required: true }
+      ],
+      'PBJT - Makanan dan Minuman': [
+        { key: 'jenisUsaha', label: 'Jenis Usaha', type: 'select', options: ['Restoran', 'Rumah makan', 'Kafe', 'Catering', 'Kantin', 'Lainnya'], required: true },
+        { key: 'omzet', label: 'Omzet (Rp/periode)', type: 'number', min: 0, required: true },
+        { key: 'periode', label: 'Periode Pajak', type: 'text', placeholder: 'Contoh: Jan 2025', required: true },
+        { key: 'jumlahOutlet', label: 'Jumlah Outlet (opsional)', type: 'number', min: 0 }
+      ],
+      'PBJT - Tenaga Listrik': [
+        { key: 'jenisPelanggan', label: 'Jenis Pelanggan', type: 'select', options: ['Rumah tangga', 'Bisnis', 'Industri', 'Sosial', 'Pemerintah', 'Lainnya'], required: true },
+        { key: 'dayaVA', label: 'Daya Tersambung (VA)', type: 'number', min: 0 },
+        { key: 'pemakaianKwh', label: 'Pemakaian (kWh/periode)', type: 'number', min: 0, required: true },
+        { key: 'periode', label: 'Periode Pajak', type: 'text', placeholder: 'Contoh: Jan 2025', required: true }
+      ],
+      'PBJT - Perhotelan': [
+        { key: 'kelasHotel', label: 'Kelas/Type', type: 'select', options: ['Hotel', 'Motel', 'Guest house', 'Villa', 'Kos harian', 'Lainnya'], required: true },
+        { key: 'jumlahKamar', label: 'Jumlah Kamar', type: 'number', min: 0, required: true },
+        { key: 'tingkatHunian', label: 'Tingkat Hunian (opsional, %)', type: 'number', min: 0 },
+        { key: 'omzet', label: 'Omzet (Rp/periode)', type: 'number', min: 0, required: true },
+        { key: 'periode', label: 'Periode Pajak', type: 'text', placeholder: 'Contoh: Jan 2025', required: true }
+      ],
+      'PBJT - Parkir': [
+        { key: 'jenisParkir', label: 'Jenis Parkir', type: 'select', options: ['Tepi jalan', 'Pelataran', 'Gedung parkir', 'Valet', 'Lainnya'], required: true },
+        { key: 'kapasitas', label: 'Kapasitas (kendaraan)', type: 'number', min: 0 },
+        { key: 'omzet', label: 'Omzet (Rp/periode)', type: 'number', min: 0, required: true },
+        { key: 'periode', label: 'Periode Pajak', type: 'text', placeholder: 'Contoh: Jan 2025', required: true }
+      ],
+      'PBJT - Kesenian dan Hiburan': [
+        { key: 'jenisHiburan', label: 'Jenis Kesenian/Hiburan', type: 'select', options: ['Bioskop', 'Konser', 'Wahana permainan', 'Panti pijat/spa', 'Karaoke', 'Event', 'Lainnya'], required: true },
+        { key: 'hargaTiket', label: 'Harga Tiket (Rp) (opsional)', type: 'number', min: 0 },
+        { key: 'jumlahPengunjung', label: 'Jumlah Pengunjung (opsional)', type: 'number', min: 0 },
+        { key: 'omzet', label: 'Omzet (Rp/periode)', type: 'number', min: 0, required: true },
+        { key: 'periode', label: 'Periode Pajak', type: 'text', placeholder: 'Contoh: Jan 2025', required: true }
+      ],
+      'Opsen Pajak Kendaraan Bermotor': [
+        { key: 'noPolisi', label: 'Nomor Polisi', type: 'text', required: true, placeholder: 'Contoh: B 1234 CD' },
+        { key: 'merkTipe', label: 'Merek/Tipe', type: 'text', required: true },
+        { key: 'tahun', label: 'Tahun', type: 'number', min: 1900, required: true },
+        { key: 'noRangka', label: 'Nomor Rangka (opsional)', type: 'text' },
+        { key: 'njkb', label: 'NJKB (Rp) (opsional)', type: 'number', min: 0 }
+      ],
+      'Opsen Bea Balik Nama Kendaraan Bermotor': [
+        { key: 'noPolisi', label: 'Nomor Polisi', type: 'text', required: true, placeholder: 'Contoh: B 1234 CD' },
+        { key: 'jenisMutasi', label: 'Jenis Peralihan', type: 'select', options: ['Mutasi masuk', 'Mutasi keluar', 'Balik nama dalam daerah', 'Lainnya'], required: true },
+        { key: 'merkTipe', label: 'Merek/Tipe', type: 'text', required: true },
+        { key: 'tahun', label: 'Tahun', type: 'number', min: 1900, required: true },
+        { key: 'nilaiJual', label: 'Nilai Jual Kendaraan (Rp) (opsional)', type: 'number', min: 0 },
+        { key: 'tglPeralihan', label: 'Tanggal Peralihan', type: 'date', required: true }
+      ]
+    };
+
+    const FIELD_HINTS = {
+      nop: 'NOP wajib untuk PBB; untuk BPHTB bisa opsional tergantung objek/berkas.',
+      periode: 'Periode dapat mengikuti masa pajak yang diatur pemda (bulanan/triwulan/tahunan).'
+    };
+
+    // =============== STATE ===============
+    let db = [];
+    let editId = null;
+    let page = 1;
+    const PAGE_SIZE = 10;
+
+    // =============== HELPERS ===============
+    const $ = (id) => document.getElementById(id);
+
+    function uid() {
+      // RFC4122-ish v4
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function nowISODate() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function safeText(s) {
+      return (s ?? '').toString();
+    }
+
+    function escapeHtml(str) {
+      return safeText(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function toast(type, title, msg) {
+      const dot = $('toastDot');
+      dot.className = 'mt-1 h-2.5 w-2.5 rounded-full ' + (type === 'error' ? 'bg-red-500' : type === 'warn' ? 'bg-amber-500' : 'bg-emerald-500');
+      $('toastTitle').textContent = title;
+      $('toastMsg').textContent = msg;
+      $('toast').classList.remove('hidden');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(hideToast, 3400);
+    }
+
+    function hideToast(){ $('toast').classList.add('hidden'); }
+
+    function normalizeStatus(s) {
+      if (!s) return 'Aktif';
+      if (s === 'Aktif') return 'Aktif';
+      if (s === 'Tidak Aktif') return 'Tidak Aktif';
+      if (s === 'Nonaktif' || s === 'Ditutup') return 'Tidak Aktif';
+      return 'Tidak Aktif';
+    }
+
+    function normalizeKepatuhan(s) {
+      if (s === 'Patuh') return 'Patuh';
+      if (s === 'Tidak Patuh') return 'Tidak Patuh';
+      const low = safeText(s).trim().toLowerCase();
+      if (low === 'tidak patuh' || low === 'tidakpatuh' || low === 'tidak-patuh') return 'Tidak Patuh';
+      return 'Patuh';
+    }
+
+    function migrateRecords(arr) {
+      if (!Array.isArray(arr)) return [];
+      return arr.map(r => {
+        const x = { ...r };
+        x.status = normalizeStatus(x.status);
+        x.statusKepatuhan = normalizeKepatuhan(x.statusKepatuhan);
+        if (!x.dataKhusus || typeof x.dataKhusus !== 'object') x.dataKhusus = {};
+        return x;
+      });
+    }
+
+    // Wrapper agar bagian lain kode tetap sederhana
+    async function load() {
+      return await dbLoadAll();
+    }
+
+    function save() {
+      // Fire-and-forget. Jika gagal, tampilkan toast.
+      dbSaveAll(db).catch(() => toast('error','Penyimpanan gagal','Gagal menyimpan ke database browser. Coba refresh, atau gunakan ekspor JSON sebagai backup.'));
+    }
+
+    function toCSV(records) {
+      const header = [
+        'id','jenisPajak','kategori','nama','namaUsaha','nik','npwp','alamat','telp','email','tglDaftar','status','statusKepatuhan','alamatObjek','keterangan','dataKhusus'
+      ];
+      const rows = records.map(r => {
+        const vals = header.map(k => {
+          let v = r[k];
+          if (k === 'dataKhusus') v = JSON.stringify(r.dataKhusus ?? {});
+          const s = safeText(v);
+          return '"' + s.replaceAll('"', '""') + '"';
+        });
+        return vals.join(',');
+      });
+      return header.join(',') + '\n' + rows.join('\n');
+    }
+
+    function download(filename, content, mime) {
+      const blob = new Blob([content], {type: mime});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function pickIdentity(r) {
+      const khas = r.dataKhusus || {};
+      const parts = [];
+      if (r.npwp) parts.push('NPWP: ' + r.npwp);
+      if (r.nik) parts.push('NIK: ' + r.nik);
+      if (khas.nop) parts.push('NOP: ' + khas.nop);
+      if (khas.noPolisi) parts.push('NoPol: ' + khas.noPolisi);
+      return parts.length ? parts.join(' • ') : '-';
+    }
+
+    function normalizeQuery(s) {
+      return safeText(s).trim().toLowerCase();
+    }
+
+    function matchesQuery(record, q) {
+      if (!q) return true;
+      const khas = record.dataKhusus || {};
+      const hay = [
+        record.jenisPajak, record.kategori, record.nama, record.namaUsaha,
+        record.nik, record.npwp, record.alamat, record.telp, record.email,
+        record.alamatObjek, record.keterangan, record.status, record.statusKepatuhan,
+        khas.nop, khas.noPolisi, khas.noRangka, khas.noIzin
+      ].map(normalizeQuery).join(' | ');
+      return hay.includes(q);
+    }
+
+    function setTab(tab) {
+      const views = ['dashboard','entri','daftar','imex','referensi'];
+      for (const v of views) {
+        $('view-' + v).classList.toggle('hidden', v !== tab);
+      }
+      for (const v of views) {
+        const b = document.querySelector(`[data-tab="${v}"]`);
+        if (!b) continue;
+        b.classList.toggle('tab-active', v === tab);
+      }
+      if (tab === 'daftar') renderTable();
+      if (tab === 'referensi') renderJenisList();
+      if (tab === 'dashboard') renderDashboard();
+    }
+
+    function setMode(isEdit) {
+      if (isEdit) {
+        $('modeLabel').innerHTML = `<span class="h-2 w-2 rounded-full bg-amber-500"></span><span>Mode: Edit</span>`;
+        $('btnCancelEdit').classList.remove('hidden');
+        $('btnSubmit').textContent = 'Simpan Perubahan';
+      } else {
+        $('modeLabel').innerHTML = `<span class="h-2 w-2 rounded-full bg-emerald-500"></span><span>Mode: Tambah</span>`;
+        $('btnCancelEdit').classList.add('hidden');
+        $('btnSubmit').textContent = 'Simpan';
+      }
+    }
+
+    function renderJenisOptions() {
+      const sel = $('jenisPajak');
+      sel.innerHTML = '';
+      for (const t of TAX_TYPES) {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        sel.appendChild(opt);
+      }
+
+      const filter = $('filterJenis');
+      filter.innerHTML = '';
+      const all = document.createElement('option');
+      all.value = '';
+      all.textContent = 'Semua';
+      filter.appendChild(all);
+      for (const t of TAX_TYPES) {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        filter.appendChild(opt);
+      }
+    }
+
+    function renderSpecialFields() {
+      const jenis = $('jenisPajak').value;
+      const fields = TYPE_FIELDS[jenis] || [];
+      const wrap = $('specialFields');
+      wrap.innerHTML = '';
+
+      // badge
+      const strictTypes = new Set(['Pajak Bumi dan Bangunan','BPHTB','Opsen Pajak Kendaraan Bermotor','Opsen Bea Balik Nama Kendaraan Bermotor']);
+      $('badgeWajib').innerHTML = strictTypes.has(jenis)
+        ? `<span class="h-2 w-2 rounded-full bg-amber-500"></span><span>Validasi: Diperketat</span>`
+        : `<span class="h-2 w-2 rounded-full bg-slate-400"></span><span>Validasi: Standar</span>`;
+
+      fields.forEach(f => {
+        const div = document.createElement('div');
+        const hint = FIELD_HINTS[f.key];
+        const req = f.required ? ' <span class="text-red-600">*</span>' : '';
+        div.innerHTML = `
+          <label class="label">${escapeHtml(f.label)}${req}</label>
+          <div id="sf-${escapeHtml(f.key)}"></div>
+          ${hint ? `<p class="help mt-1">${escapeHtml(hint)}</p>` : ''}
+        `;
+        wrap.appendChild(div);
+
+        const mount = div.querySelector(`#sf-${CSS.escape(f.key)}`);
+        let el;
+        if (f.type === 'select') {
+          el = document.createElement('select');
+          el.className = 'input';
+          const empty = document.createElement('option');
+          empty.value = '';
+          empty.textContent = 'Pilih...';
+          el.appendChild(empty);
+          (f.options || []).forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o;
+            opt.textContent = o;
+            el.appendChild(opt);
+          });
+        } else {
+          el = document.createElement('input');
+          el.className = 'input';
+          el.type = f.type || 'text';
+          if (f.placeholder) el.placeholder = f.placeholder;
+          if (typeof f.min !== 'undefined') el.min = String(f.min);
+          if (typeof f.max !== 'undefined') el.max = String(f.max);
+          if (f.type === 'number') el.inputMode = 'decimal';
+        }
+        el.id = 'sf_' + f.key;
+        el.dataset.required = f.required ? '1' : '0';
+        el.dataset.label = f.label;
+        mount.appendChild(el);
+      });
+    }
+
+    function getSpecialData() {
+      const jenis = $('jenisPajak').value;
+      const fields = TYPE_FIELDS[jenis] || [];
+      const data = {};
+      for (const f of fields) {
+        const el = $('sf_' + f.key);
+        if (!el) continue;
+        let v = el.value;
+        if (f.type === 'number') {
+          v = v === '' ? '' : Number(v);
+        }
+        data[f.key] = v;
+      }
+      return data;
+    }
+
+    function setSpecialData(jenis, dataKhusus) {
+      $('jenisPajak').value = jenis;
+      renderSpecialFields();
+      const fields = TYPE_FIELDS[jenis] || [];
+      fields.forEach(f => {
+        const el = $('sf_' + f.key);
+        if (!el) return;
+        const v = (dataKhusus || {})[f.key];
+        el.value = (v ?? '') === null ? '' : String(v ?? '');
+      });
+    }
+
+    function validateForm() {
+      const errors = [];
+      const jenis = $('jenisPajak').value;
+      const nama = $('nama').value.trim();
+      const alamat = $('alamat').value.trim();
+      const kategori = $('kategori').value;
+      const tglDaftar = $('tglDaftar').value;
+      const status = $('status').value;
+      const statusKepatuhan = $('statusKepatuhan').value;
+
+      if (!jenis) errors.push('Jenis pajak wajib diisi.');
+      if (!kategori) errors.push('Kategori wajib diisi.');
+      if (!nama) errors.push('Nama wajib diisi.');
+      if (!alamat) errors.push('Alamat wajib diisi.');
+      if (!tglDaftar) errors.push('Tanggal daftar wajib diisi.');
+      if (!status) errors.push('Status WP wajib diisi.');
+      if (!statusKepatuhan) errors.push('Status kepatuhan wajib diisi.');
+
+      // special required fields
+      const fields = TYPE_FIELDS[jenis] || [];
+      for (const f of fields) {
+        if (!f.required) continue;
+        const el = $('sf_' + f.key);
+        if (!el) continue;
+        const val = el.value;
+        if (val === '' || val === null || typeof val === 'undefined') {
+          errors.push(`Field "${f.label}" wajib diisi untuk ${jenis}.`);
+        }
+      }
+
+      // minimal sanity checks
+      const nik = $('nik').value.trim();
+      if (nik && nik.replace(/\D/g,'').length < 10) {
+        errors.push('NIK tampak terlalu pendek.');
+      }
+
+      return errors;
+    }
+
+    function getFormData() {
+      return {
+        jenisPajak: $('jenisPajak').value,
+        kategori: $('kategori').value,
+        nama: $('nama').value.trim(),
+        namaUsaha: $('namaUsaha').value.trim(),
+        nik: $('nik').value.trim(),
+        npwp: $('npwp').value.trim(),
+        alamat: $('alamat').value.trim(),
+        telp: $('telp').value.trim(),
+        email: $('email').value.trim(),
+        tglDaftar: $('tglDaftar').value,
+        status: normalizeStatus($('status').value),
+        statusKepatuhan: normalizeKepatuhan($('statusKepatuhan').value),
+        alamatObjek: $('alamatObjek').value.trim(),
+        keterangan: $('keterangan').value.trim(),
+        dataKhusus: getSpecialData(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function resetForm() {
+      editId = null;
+      setMode(false);
+      $('kategori').value = 'Orang Pribadi';
+      $('nama').value = '';
+      $('namaUsaha').value = '';
+      $('nik').value = '';
+      $('npwp').value = '';
+      $('alamat').value = '';
+      $('telp').value = '';
+      $('email').value = '';
+      $('tglDaftar').value = nowISODate();
+      $('status').value = 'Aktif';
+      $('statusKepatuhan').value = 'Patuh';
+      $('alamatObjek').value = '';
+      $('keterangan').value = '';
+      $('jenisPajak').value = TAX_TYPES[0];
+      renderSpecialFields();
+    }
+
+    function upsertRecord() {
+      const errs = validateForm();
+      if (errs.length) {
+        toast('error', 'Validasi gagal', errs[0]);
+        return;
+      }
+
+      const data = getFormData();
+      if (editId) {
+        const idx = db.findIndex(x => x.id === editId);
+        if (idx === -1) {
+          toast('error', 'Gagal', 'Data yang diedit tidak ditemukan.');
+          editId = null;
+          setMode(false);
+          return;
+        }
+        db[idx] = { ...db[idx], ...data };
+        save();
+        toast('ok', 'Tersimpan', 'Perubahan berhasil disimpan.');
+      } else {
+        const rec = {
+          id: uid(),
+          createdAt: new Date().toISOString(),
+          ...data
+        };
+        db.unshift(rec);
+        save();
+        toast('ok', 'Tersimpan', 'Data baru berhasil ditambahkan.');
+      }
+      refreshAll();
+      resetForm();
+    }
+
+    function refreshAll() {
+      renderKpi();
+      renderTable();
+      renderDashboard();
+    }
+
+    function renderKpi() {
+      $('kpiTotal').textContent = String(db.length);
+      $('kpiAktif').textContent = String(db.filter(x => x.status === 'Aktif').length);
+
+      const counts = {};
+      for (const r of db) counts[r.jenisPajak] = (counts[r.jenisPajak] || 0) + 1;
+      let top = null;
+      for (const [k,v] of Object.entries(counts)) {
+        if (!top || v > top.v) top = {k, v};
+      }
+      $('kpiTopType').textContent = top ? `${top.k} (${top.v})` : '-';
+      const pct = top ? Math.round((top.v / Math.max(1, db.length)) * 100) : 0;
+      $('kpiBar').style.width = pct + '%';
+
+      const dist = $('kpiDist');
+      dist.innerHTML = '';
+      const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 6);
+      if (!sorted.length) {
+        dist.innerHTML = `<p class="help">Belum ada data.</p>`;
+        return;
+      }
+      for (const [k,v] of sorted) {
+        const p = Math.round((v / Math.max(1, db.length)) * 100);
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-xs font-semibold text-slate-700 truncate">${escapeHtml(k)}</p>
+            <p class="text-xs text-slate-600 mono">${v} (${p}%)</p>
+          </div>
+          <div class="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div class="h-full bg-slate-900" style="width:${p}%"></div>
+          </div>
+        `;
+        dist.appendChild(row);
+      }
+    }
+
+    // =============== DASHBOARD ===============
+    function monthKey(dateStr) {
+      if (!dateStr) return null;
+      const d = new Date(dateStr);
+      if (Number.isNaN(d.getTime())) return null;
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${d.getFullYear()}-${m}`;
+    }
+
+    function lastNMonths(n) {
+      const out = [];
+      const d = new Date();
+      d.setDate(1);
+      for (let i = n - 1; i >= 0; i--) {
+        const x = new Date(d.getFullYear(), d.getMonth() - i, 1);
+        const key = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`;
+        out.push({ key, label: x.toLocaleString('id-ID', { month: 'short' }), year: x.getFullYear() });
+      }
+      return out;
+    }
+
+    function renderDashboard() {
+      if (!$('dashTotal')) return;
+
+      const total = db.length;
+      const aktif = db.filter(x => x.status === 'Aktif').length;
+      const tidakAktif = total - aktif;
+
+      $('dashTotal').textContent = String(total);
+      $('dashAktif').textContent = String(aktif);
+
+      const updated = db[0]?.updatedAt || db[0]?.createdAt;
+      $('dashLastUpdated').textContent = updated ? `Terakhir update: ${new Date(updated).toLocaleString('id-ID')}` : 'Terakhir update: —';
+
+      // Donut status (aktif/tidak aktif)
+      const denom = Math.max(1, total);
+      const pAktif = total ? Math.round((aktif / denom) * 100) : 0;
+      const pTidakAktif = total ? (100 - pAktif) : 0;
+
+      $('dashDonutPct').textContent = `${pAktif}%`;
+      $('dashDonut').style.background = `conic-gradient(#10b981 0 ${pAktif}%, #94a3b8 ${pAktif}% 100%)`;
+      $('dashStatAktif').textContent = `${aktif} (${pAktif}%)`;
+      $('dashStatTidakAktif').textContent = `${tidakAktif} (${pTidakAktif}%)`;
+      $('dashStatusLegend').textContent = `${aktif} aktif • ${tidakAktif} tidak aktif`;
+
+      // Top types
+      const counts = {};
+      for (const r of db) counts[r.jenisPajak] = (counts[r.jenisPajak] || 0) + 1;
+      const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+      const top = entries[0];
+      $('dashTopInfo').textContent = top ? `${top[0]} (${top[1]})` : 'Belum ada data';
+
+      const topWrap = $('dashTopTypes');
+      topWrap.innerHTML = '';
+      const top6 = entries.slice(0, 6);
+      if (!top6.length) {
+        topWrap.innerHTML = `<p class="help">Belum ada data untuk ditampilkan.</p>`;
+      } else {
+        for (const [k,v] of top6) {
+          const p = Math.round((v / Math.max(1, total)) * 100);
+          const row = document.createElement('div');
+          row.innerHTML = `
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs font-semibold text-slate-700 truncate">${escapeHtml(k)}</p>
+              <p class="text-xs text-slate-600 mono">${v} (${p}%)</p>
+            </div>
+            <div class="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full" style="width:${p}%; background: linear-gradient(90deg, #0f172a, #1d4ed8);"></div>
+            </div>
+          `;
+          topWrap.appendChild(row);
+        }
+      }
+
+      // Trend 6 months (based on tglDaftar)
+      const months = lastNMonths(6);
+      const mCounts = Object.fromEntries(months.map(m => [m.key, 0]));
+      for (const r of db) {
+        const k = monthKey(r.tglDaftar);
+        if (k && (k in mCounts)) mCounts[k]++;
+      }
+      const maxV = Math.max(1, ...Object.values(mCounts));
+      const bars = $('dashTrendBars');
+      bars.innerHTML = '';
+      months.forEach(m => {
+        const v = mCounts[m.key] || 0;
+        const h = Math.round((v / maxV) * 100);
+        const col = document.createElement('div');
+        col.innerHTML = `
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-full h-28 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 flex items-end">
+              <div class="w-full rounded-xl" style="height:${h}%; background: linear-gradient(180deg, rgba(29,78,216,0.9), rgba(15,23,42,0.9));"></div>
+            </div>
+            <div class="text-xs font-semibold text-slate-700">${escapeHtml(m.label)}</div>
+            <div class="text-[11px] text-slate-600 mono">${v}</div>
+          </div>
+        `;
+        bars.appendChild(col);
+      });
+      const sumTrend = Object.values(mCounts).reduce((a,b)=>a+b,0);
+      $('dashTrendInfo').textContent = `${sumTrend} pendaftaran (6 bulan)`;
+
+      // Recent activity (by updatedAt/createdAt)
+      const recent = [...db].sort((a,b) => (b.updatedAt || b.createdAt || '').localeCompare(a.updatedAt || a.createdAt || '')).slice(0, 6);
+      $('dashRecentCount').textContent = String(recent.length);
+      const recentWrap = $('dashRecent');
+      recentWrap.innerHTML = '';
+      if (!recent.length) {
+        recentWrap.innerHTML = `<p class="help">Belum ada aktivitas.</p>`;
+      } else {
+        recent.forEach(r => {
+          const when = r.updatedAt || r.createdAt;
+          const t = when ? new Date(when).toLocaleString('id-ID') : '-';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'dash-row-btn';
+          const statusCls = r.status === 'Aktif' ? 'text-emerald-700' : 'text-slate-700';
+          btn.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-extrabold text-slate-900">${escapeHtml(r.nama)} <span class="text-slate-400 font-black">•</span> <span class="text-slate-700">${escapeHtml(r.jenisPajak)}</span></p>
+                <p class="text-[11px] text-slate-600">${escapeHtml(pickIdentity(r))}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[11px] text-slate-600 mono">${escapeHtml(t)}</p>
+                <p class="text-[11px] font-semibold ${statusCls}">${escapeHtml(r.status)}</p>
+              </div>
+            </div>
+          `;
+          btn.addEventListener('click', () => openDetail(r.id));
+          recentWrap.appendChild(btn);
+        });
+      }
+
+      // Quality checks
+      let missingContact = 0;
+      let missingIdentity = 0;
+      let missingObjAddr = 0;
+      let strictMissing = 0;
+      let coreFilled = 0;
+      let tidakPatuh = 0;
+      const strictTypes = new Set(['Pajak Bumi dan Bangunan','BPHTB','Opsen Pajak Kendaraan Bermotor','Opsen Bea Balik Nama Kendaraan Bermotor']);
+
+      for (const r of db) {
+        const khas = r.dataKhusus || {};
+        if (!(r.telp || r.email)) missingContact++;
+        if (!(r.nik || r.npwp || khas.nop || khas.noPolisi)) missingIdentity++;
+        if (!r.alamatObjek) missingObjAddr++;
+        if (r.statusKepatuhan === 'Tidak Patuh') tidakPatuh++;
+
+        // core completeness score (simple)
+        const core = [r.jenisPajak, r.kategori, r.nama, r.alamat, r.tglDaftar, r.status, r.statusKepatuhan];
+        let ok = core.every(Boolean);
+        if (ok) coreFilled++;
+
+        if (strictTypes.has(r.jenisPajak)) {
+          const fields = TYPE_FIELDS[r.jenisPajak] || [];
+          for (const f of fields) {
+            if (!f.required) continue;
+            const v = (khas || {})[f.key];
+            if (v === '' || v === null || typeof v === 'undefined') { strictMissing++; break; }
+          }
+        }
+      }
+
+      const completeness = total ? Math.round((coreFilled / total) * 100) : 0;
+      $('dashCompleteness').textContent = `${completeness}%`;
+
+      const qWrap = $('dashQuality');
+      qWrap.innerHTML = '';
+      const items = [
+        { k: 'Tidak patuh', v: tidakPatuh },
+        { k: 'Tanpa kontak (telp/email)', v: missingContact },
+        { k: 'Tanpa identitas (NIK/NPWP/NOP/NoPol)', v: missingIdentity },
+        { k: 'Alamat objek kosong', v: missingObjAddr },
+        { k: 'Kebutuhan ketat belum lengkap (PBB/BPHTB/Opsen)', v: strictMissing }
+      ];
+      if (!total) {
+        qWrap.innerHTML = `<p class="help">Belum ada data untuk dianalisis.</p>`;
+      } else {
+        items.forEach(it => {
+          const p = Math.round((it.v / total) * 100);
+          const row = document.createElement('div');
+          row.innerHTML = `
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs font-semibold text-slate-700">${escapeHtml(it.k)}</p>
+              <p class="text-xs text-slate-600 mono">${it.v} (${p}%)</p>
+            </div>
+            <div class="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full" style="width:${p}%; background: linear-gradient(90deg, #ef4444, #f59e0b);"></div>
+            </div>
+          `;
+          qWrap.appendChild(row);
+        });
+      }
+    }
+
+    function filteredRecords() {
+      const q = normalizeQuery($('q').value);
+      const jenis = $('filterJenis').value;
+      const st = $('filterStatus').value;
+      const kp = $('filterKepatuhan').value;
+
+      return db.filter(r => {
+        if (jenis && r.jenisPajak !== jenis) return false;
+        if (st && r.status !== st) return false;
+        if (kp && r.statusKepatuhan !== kp) return false;
+        if (!matchesQuery(r, q)) return false;
+        return true;
+      });
+    }
+
+    function renderTable() {
+      const rows = filteredRecords();
+      const total = rows.length;
+      $('countLabel').textContent = `${total} data`;
+
+      const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      page = Math.min(page, totalPages);
+      page = Math.max(page, 1);
+      $('pageLabel').textContent = `Hal ${page} / ${totalPages}`;
+
+      const start = (page - 1) * PAGE_SIZE;
+      const slice = rows.slice(start, start + PAGE_SIZE);
+
+      const tb = $('tbody');
+      tb.innerHTML = '';
+
+      if (!slice.length) {
+        tb.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+              Tidak ada data yang cocok. Coba ubah pencarian/filter.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      slice.forEach(r => {
+        const tr = document.createElement('tr');
+
+        const statusChip = r.status === 'Aktif'
+          ? `<span class="chip bg-emerald-50 border-emerald-200 text-emerald-700"><span class="h-2 w-2 rounded-full bg-emerald-500"></span><span>Aktif</span></span>`
+          : `<span class="chip bg-slate-50 border-slate-200 text-slate-700"><span class="h-2 w-2 rounded-full bg-slate-400"></span><span>Tidak Aktif</span></span>`;
+
+        const kepChip = r.statusKepatuhan === 'Patuh'
+          ? `<span class="chip bg-sky-50 border-sky-200 text-sky-700"><span class="h-2 w-2 rounded-full bg-sky-500"></span><span>Patuh</span></span>`
+          : `<span class="chip bg-red-50 border-red-200 text-red-700"><span class="h-2 w-2 rounded-full bg-red-500"></span><span>Tidak Patuh</span></span>`;
+
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <p class="font-extrabold text-slate-900">${escapeHtml(r.jenisPajak)}</p>
+            <p class="text-xs text-slate-600">${escapeHtml(r.kategori || '-')}${r.namaUsaha ? ` • ${escapeHtml(r.namaUsaha)}` : ''}</p>
+          </td>
+          <td class="px-4 py-3">
+            <p class="font-semibold">${escapeHtml(r.nama)}</p>
+            <p class="text-xs text-slate-600 line-clamp-2">${escapeHtml(r.alamat || '-')}</p>
+          </td>
+          <td class="px-4 py-3">
+            <p class="text-xs text-slate-700">${escapeHtml(pickIdentity(r))}</p>
+          </td>
+          <td class="px-4 py-3">
+            <div class="flex flex-col gap-2">
+              <div>${statusChip}</div>
+              <div>${kepChip}</div>
+            </div>
+          </td>
+          <td class="px-4 py-3"><span class="mono text-xs text-slate-700">${escapeHtml(r.tglDaftar || '-')}</span></td>
+          <td class="px-4 py-3">
+            <div class="flex justify-end gap-2">
+              <button class="btn btn-ghost px-3 py-1.5" data-act="detail" data-id="${r.id}">Detail</button>
+              <button class="btn btn-ghost px-3 py-1.5" data-act="edit" data-id="${r.id}">Edit</button>
+              <button class="btn btn-danger px-3 py-1.5" data-act="delete" data-id="${r.id}">Hapus</button>
+            </div>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+
+      tb.querySelectorAll('button[data-act]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const act = btn.dataset.act;
+          if (act === 'detail') openDetail(id);
+          if (act === 'edit') startEdit(id);
+          if (act === 'delete') deleteRecord(id);
+        });
+      });
+    }
+
+    function deleteRecord(id) {
+      const r = db.find(x => x.id === id);
+      if (!r) return;
+      const ok = confirm(`Hapus data?\n\n${r.jenisPajak}\n${r.nama}\n\nTindakan ini tidak bisa dibatalkan.`);
+      if (!ok) return;
+      db = db.filter(x => x.id !== id);
+      save();
+      toast('ok', 'Terhapus', 'Data berhasil dihapus.');
+      refreshAll();
+    }
+
+    function startEdit(id) {
+      const r = db.find(x => x.id === id);
+      if (!r) {
+        toast('error','Gagal','Data tidak ditemukan.');
+        return;
+      }
+      editId = id;
+      setMode(true);
+
+      $('kategori').value = r.kategori || 'Orang Pribadi';
+      $('nama').value = r.nama || '';
+      $('namaUsaha').value = r.namaUsaha || '';
+      $('nik').value = r.nik || '';
+      $('npwp').value = r.npwp || '';
+      $('alamat').value = r.alamat || '';
+      $('telp').value = r.telp || '';
+      $('email').value = r.email || '';
+      $('tglDaftar').value = r.tglDaftar || nowISODate();
+      $('status').value = normalizeStatus(r.status);
+      $('statusKepatuhan').value = normalizeKepatuhan(r.statusKepatuhan);
+      $('alamatObjek').value = r.alamatObjek || '';
+      $('keterangan').value = r.keterangan || '';
+      setSpecialData(r.jenisPajak, r.dataKhusus || {});
+
+      setTab('entri');
+      window.scrollTo({top: 0, behavior: 'smooth'});
+      toast('warn', 'Mode edit', 'Anda sedang mengedit data. Simpan untuk menerapkan perubahan.');
+    }
+
+    function kv(label, value) {
+      return `
+        <div class="rounded-xl border border-slate-200 p-3">
+          <p class="text-xs text-slate-600">${escapeHtml(label)}</p>
+          <p class="text-sm font-semibold text-slate-900 break-words">${escapeHtml(value || '-')}</p>
+        </div>
+      `;
+    }
+
+    function openDetail(id) {
+      const r = db.find(x => x.id === id);
+      if (!r) return;
+      $('modal').classList.remove('hidden');
+      $('modalTitle').textContent = `${r.jenisPajak} — ${r.nama}`;
+      $('modalId').textContent = r.id;
+
+      const khas = r.dataKhusus || {};
+      const fields = TYPE_FIELDS[r.jenisPajak] || [];
+
+      const ident = pickIdentity(r);
+      const body = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          ${kv('Jenis Pajak', r.jenisPajak)}
+          ${kv('Status WP', r.status)}
+          ${kv('Status Kepatuhan', r.statusKepatuhan)}
+          ${kv('Kategori', r.kategori)}
+          ${kv('Tanggal Daftar', r.tglDaftar)}
+          ${kv('Nama Wajib Pajak', r.nama)}
+          ${kv('Nama Usaha/Merek', r.namaUsaha)}
+          ${kv('Identitas', ident)}
+          ${kv('Kontak', [r.telp, r.email].filter(Boolean).join(' • ') || '-')}
+          <div class="md:col-span-2">${kv('Alamat Wajib Pajak', r.alamat)}</div>
+          <div class="md:col-span-2">${kv('Alamat/Lokasi Objek', r.alamatObjek)}</div>
+        </div>
+        <div class="mt-4">
+          <p class="text-sm font-extrabold">Rincian Sesuai Jenis Pajak</p>
+          <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${fields.map(f => kv(f.label, khas[f.key] === '' ? '-' : safeText(khas[f.key]))).join('')}
+          </div>
+        </div>
+        <div class="mt-4">${kv('Keterangan', r.keterangan)}</div>
+        <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p class="text-xs text-slate-600">Metadata</p>
+          <p class="text-xs text-slate-700 mono">createdAt: ${escapeHtml(r.createdAt || '-') }\nupdatedAt: ${escapeHtml(r.updatedAt || '-') }</p>
+        </div>
+      `;
+      $('modalBody').innerHTML = body;
+
+      $('btnModalEdit').onclick = () => { closeModal(); startEdit(id); };
+      $('btnModalPrint').onclick = () => printDetail(r);
+    }
+
+    function closeModal() {
+      $('modal').classList.add('hidden');
+    }
+
+    function printDetail(r) {
+      const w = window.open('', '_blank');
+      const fields = TYPE_FIELDS[r.jenisPajak] || [];
+      const khas = r.dataKhusus || {};
+
+      const html = `<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cetak Detail WP</title>
+<style>
+  body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; color:#0f172a;}
+  h1{font-size: 18px; margin: 0 0 6px;}
+  .sub{color:#475569; font-size:12px; margin:0 0 16px;}
+  .grid{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+  .box{border:1px solid #e2e8f0; border-radius:12px; padding:10px;}
+  .k{font-size:11px; color:#64748b; margin:0 0 4px;}
+  .v{font-size:13px; font-weight:600; margin:0; white-space:pre-wrap; word-break:break-word;}
+  .full{grid-column: 1/-1;}
+  hr{border:none; border-top:1px solid #e2e8f0; margin:16px 0;}
+</style></head>
+<body>
+  <h1>Detail Wajib Pajak Daerah</h1>
+  <p class="sub">Rujukan: UU No. 1 Tahun 2022 (HKPD) & PP No. 35 Tahun 2024 — Dokumen administratif</p>
+  <div class="grid">
+    <div class="box"><p class="k">Jenis Pajak</p><p class="v">${escapeHtml(r.jenisPajak)}</p></div>
+    <div class="box"><p class="k">Status WP</p><p class="v">${escapeHtml(r.status)}</p></div>
+    <div class="box"><p class="k">Status Kepatuhan</p><p class="v">${escapeHtml(r.statusKepatuhan)}</p></div>
+    <div class="box"><p class="k">Nama WP</p><p class="v">${escapeHtml(r.nama)}</p></div>
+    <div class="box"><p class="k">Kategori</p><p class="v">${escapeHtml(r.kategori)}</p></div>
+    <div class="box full"><p class="k">Alamat WP</p><p class="v">${escapeHtml(r.alamat)}</p></div>
+    <div class="box full"><p class="k">Alamat/Lokasi Objek</p><p class="v">${escapeHtml(r.alamatObjek)}</p></div>
+    <div class="box"><p class="k">Identitas</p><p class="v">${escapeHtml(pickIdentity(r))}</p></div>
+    <div class="box"><p class="k">Tanggal Daftar</p><p class="v">${escapeHtml(r.tglDaftar)}</p></div>
+  </div>
+  <hr/>
+  <h1 style="font-size:14px; margin:0 0 10px;">Rincian Sesuai Jenis Pajak</h1>
+  <div class="grid">
+    ${fields.map(f => `<div class="box"><p class="k">${escapeHtml(f.label)}</p><p class="v">${escapeHtml(safeText(khas[f.key]) || '-')}</p></div>`).join('')}
+  </div>
+  <hr/>
+  <div class="box"><p class="k">Keterangan</p><p class="v">${escapeHtml(r.keterangan || '-')}</p></div>
+  <p class="sub" style="margin-top:14px;">ID: ${escapeHtml(r.id)} | createdAt: ${escapeHtml(r.createdAt || '-')} | updatedAt: ${escapeHtml(r.updatedAt || '-')}</p>
+  <script>window.onload = () => window.print();<\/script>
+</body></html>`;
+
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    }
+
+    function renderJenisList() {
+      const wrap = $('jenisList');
+      wrap.innerHTML = '';
+      TAX_TYPES.forEach((t, idx) => {
+        const div = document.createElement('div');
+        div.className = 'chip bg-slate-50 border-slate-200 text-slate-700 justify-between';
+        div.innerHTML = `<span class="mono">${String(idx+1).padStart(2,'0')}</span><span>${escapeHtml(t)}</span>`;
+        wrap.appendChild(div);
+      });
+    }
+
+    // =============== IMPORT/EXPORT ===============
+    async function exportJSON() {
+      const payload = {
+        meta: { app: 'Database Wajib Pajak Daerah', version: 1, exportedAt: new Date().toISOString() },
+        data: db
+      };
+      download(`wpd-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload, null, 2), 'application/json');
+      toast('ok','Ekspor','JSON berhasil diunduh.');
+    }
+
+    async function exportCSV() {
+      const csv = toCSV(db);
+      download(`wpd-data-${new Date().toISOString().slice(0,10)}.csv`, csv, 'text/csv');
+      toast('ok','Ekspor','CSV berhasil diunduh.');
+    }
+
+    function parseImportJSON(text) {
+      const parsed = JSON.parse(text);
+      // Support both: {meta,data} and direct array
+      const arr = Array.isArray(parsed) ? parsed : parsed?.data;
+      if (!Array.isArray(arr)) throw new Error('Struktur JSON tidak valid: harus berupa array atau objek {data: array}.');
+
+      // minimal normalize
+      const normalized = arr.map(x => {
+        const y = { ...x };
+        const jenis = y.jenisPajak;
+        if (!TAX_TYPES.includes(jenis)) {
+          y.jenisPajak = jenis || 'Tidak diketahui';
+        }
+        if (!y.id) y.id = uid();
+        if (!y.createdAt) y.createdAt = new Date().toISOString();
+        y.updatedAt = new Date().toISOString();
+        y.status = normalizeStatus(y.status);
+        y.statusKepatuhan = normalizeKepatuhan(y.statusKepatuhan);
+        if (!y.dataKhusus || typeof y.dataKhusus !== 'object') y.dataKhusus = {};
+        return y;
+      });
+      return normalized;
+    }
+
+    async function validateImport() {
+      const f = $('importFile').files?.[0];
+      if (!f) {
+        $('importLog').textContent = 'Pilih file JSON terlebih dahulu.';
+        toast('warn','Impor','Belum ada file dipilih.');
+        return;
+      }
+      const text = await f.text();
+      try {
+        const arr = parseImportJSON(text);
+        const unknown = arr.filter(x => !TAX_TYPES.includes(x.jenisPajak)).length;
+        $('importLog').textContent = `OK. Terbaca ${arr.length} record.\nJenis pajak tidak dikenal: ${unknown}.\n\nSampel record pertama:\n` + JSON.stringify(arr[0], null, 2);
+        toast('ok','Cek format','File terlihat valid.');
+      } catch (e) {
+        $('importLog').textContent = 'Gagal: ' + e.message;
+        toast('error','Cek format','Gagal memvalidasi file.');
+      }
+    }
+
+    async function doImport() {
+      const f = $('importFile').files?.[0];
+      if (!f) {
+        toast('warn','Impor','Pilih file JSON terlebih dahulu.');
+        return;
+      }
+      const mode = $('importMode').value;
+      const text = await f.text();
+      try {
+        const arr = parseImportJSON(text);
+        if (mode === 'replace') {
+          const ok = confirm(`Mode REPLACE akan mengganti semua data lokal. Lanjut? (impor ${arr.length} record)`);
+          if (!ok) return;
+          db = arr;
+        } else {
+          // merge by id; if duplicate, overwrite
+          const map = new Map(db.map(x => [x.id, x]));
+          for (const r of arr) map.set(r.id, r);
+          db = Array.from(map.values()).sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+        }
+        save();
+        refreshAll();
+        $('importLog').textContent = `Impor berhasil (${arr.length} record), mode: ${mode}.`;
+        toast('ok','Impor','Data berhasil diimpor.');
+      } catch (e) {
+        $('importLog').textContent = 'Gagal: ' + e.message;
+        toast('error','Impor','Gagal mengimpor file.');
+      }
+    }
+
+    async function copyJSON() {
+      const payload = { meta: { app: 'Database Wajib Pajak Daerah', version: 1, exportedAt: new Date().toISOString() }, data: db };
+      const text = JSON.stringify(payload, null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('ok','Tersalin','JSON berhasil disalin ke clipboard.');
+      } catch {
+        $('pasteArea').value = text;
+        toast('warn','Clipboard ditolak','JSON dimasukkan ke area tempel. Silakan salin manual.');
+      }
+    }
+
+    function restoreFromPaste() {
+      const text = $('pasteArea').value.trim();
+      if (!text) {
+        toast('warn','Pulihkan','Area tempel masih kosong.');
+        return;
+      }
+      try {
+        const arr = parseImportJSON(text);
+        const ok = confirm(`Ini akan mengganti semua data lokal (replace) dengan ${arr.length} record. Lanjut?`);
+        if (!ok) return;
+        db = arr;
+        save();
+        refreshAll();
+        toast('ok','Pulihkan','Data berhasil dipulihkan.');
+      } catch (e) {
+        toast('error','Pulihkan','Gagal: ' + e.message);
+      }
+    }
+
+    // =============== SEED & WIPE ===============
+    function seed() {
+      const examples = [
+        {
+          id: uid(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          jenisPajak: 'Pajak Reklame',
+          kategori: 'Badan',
+          nama: 'PT Sinar Media',
+          namaUsaha: 'Sinar Billboard',
+          nik: '',
+          npwp: '01.234.567.8-999.000',
+          alamat: 'Jl. Merdeka No. 10, Kel. Contoh, Kec. Pusat, Kota X',
+          telp: '021-555000',
+          email: 'admin@sinarmedia.co.id',
+          tglDaftar: nowISODate(),
+          status: 'Aktif',
+          statusKepatuhan: 'Patuh',
+          alamatObjek: 'Simpang 4 Alun-alun Kota X',
+          keterangan: 'Reklame LED 1 titik.',
+          dataKhusus: { jenisReklame: 'Videotron/LED', ukuran: '4 x 6 m', jumlah: 1, masaTayang: '30 hari', nilaiSewa: 25000000 }
+        },
+        {
+          id: uid(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          jenisPajak: 'Pajak Bumi dan Bangunan',
+          kategori: 'Orang Pribadi',
+          nama: 'Siti Rahmawati',
+          namaUsaha: '',
+          nik: '3301123456789000',
+          npwp: '',
+          alamat: 'Perum Griya Sejahtera Blok C-2, Kota X',
+          telp: '081234567890',
+          email: '',
+          tglDaftar: nowISODate(),
+          status: 'Aktif',
+          statusKepatuhan: 'Patuh',
+          alamatObjek: 'Perum Griya Sejahtera Blok C-2, Kota X',
+          keterangan: 'Objek rumah tinggal.',
+          dataKhusus: { nop: '33.12.123.456.789-0123.0', luasTanah: 120, luasBangunan: 90, njopTanah: 240000000, njopBangunan: 180000000, pemanfaatan: 'Perumahan' }
+        },
+        {
+          id: uid(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          jenisPajak: 'PBJT - Makanan dan Minuman',
+          kategori: 'Badan',
+          nama: 'CV Rasa Mantap',
+          namaUsaha: 'Rasa Mantap Cafe',
+          nik: '',
+          npwp: '09.876.543.2-111.000',
+          alamat: 'Jl. Kenanga No. 5, Kota X',
+          telp: '082200110022',
+          email: 'owner@rasamantap.id',
+          tglDaftar: nowISODate(),
+          status: 'Aktif',
+          statusKepatuhan: 'Tidak Patuh',
+          alamatObjek: 'Jl. Kenanga No. 5, Kota X',
+          keterangan: 'Pelaporan omzet bulanan.',
+          dataKhusus: { jenisUsaha: 'Kafe', omzet: 125000000, periode: 'Jan 2025', jumlahOutlet: 1 }
+        },
+        {
+          id: uid(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          jenisPajak: 'Opsen Pajak Kendaraan Bermotor',
+          kategori: 'Orang Pribadi',
+          nama: 'Budi Santoso',
+          namaUsaha: '',
+          nik: '3301987654321000',
+          npwp: '',
+          alamat: 'Dusun Mawar RT 01/RW 02, Kota X',
+          telp: '081299988877',
+          email: '',
+          tglDaftar: nowISODate(),
+          status: 'Aktif',
+          statusKepatuhan: 'Patuh',
+          alamatObjek: '',
+          keterangan: 'Kendaraan roda 4.',
+          dataKhusus: { noPolisi: 'B 1234 CD', merkTipe: 'Toyota Avanza', tahun: 2021, noRangka: 'MHFK1234567890', njkb: 180000000 }
+        }
+      ];
+
+      const ok = confirm('Tambahkan contoh data ke database lokal?');
+      if (!ok) return;
+      const map = new Map(db.map(x => [x.id, x]));
+      examples.forEach(r => map.set(r.id, migrateRecords([r])[0]));
+      db = Array.from(map.values());
+      save();
+      refreshAll();
+      toast('ok','Contoh data','Contoh data berhasil ditambahkan.');
+    }
+
+    async function wipeAll() {
+      const ok = confirm('Hapus semua data dari perangkat ini? Tindakan ini tidak dapat dibatalkan.');
+      if (!ok) return;
+      db = [];
+      try {
+        await dbWipeAll();
+      } catch {
+        // fallback: tetap coba save kosong
+        save();
+      }
+      refreshAll();
+      resetForm();
+      toast('ok','Dihapus','Semua data lokal telah dihapus.');
+    }
+
+    // =============== EVENTS ===============
+    async function init() {
+      renderJenisOptions();
+      await dbInit();
+      db = await load();
+      $('tglDaftar').value = nowISODate();
+      $('jenisPajak').value = TAX_TYPES[0];
+      renderSpecialFields();
+      renderKpi();
+      renderTable();
+      renderJenisList();
+      renderDashboard();
+
+      // Tabs
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => setTab(btn.dataset.tab));
+      });
+
+      // Dashboard actions
+      $('btnDashRefresh').addEventListener('click', () => { renderDashboard(); toast('ok','Dashboard','Dashboard diperbarui.'); });
+      $('btnDashGoEntri').addEventListener('click', () => { setTab('entri'); window.scrollTo({top:0, behavior:'smooth'}); });
+      $('btnDashGoDaftar').addEventListener('click', () => { setTab('daftar'); window.scrollTo({top:0, behavior:'smooth'}); });
+      $('btnDashExportJson').addEventListener('click', exportJSON);
+      $('btnDashSeed').addEventListener('click', seed);
+      $('btnDashWipe').addEventListener('click', wipeAll);
+
+      $('jenisPajak').addEventListener('change', () => {
+        renderSpecialFields();
+      });
+
+      $('btnSubmit').addEventListener('click', upsertRecord);
+      $('btnReset').addEventListener('click', () => { resetForm(); toast('ok','Reset','Form dikosongkan.'); });
+      $('btnCancelEdit').addEventListener('click', () => { resetForm(); toast('ok','Batal edit','Kembali ke mode tambah.'); });
+      $('btnPrint').addEventListener('click', () => window.print());
+
+      $('btnRefreshKpi').addEventListener('click', () => { renderKpi(); toast('ok','Ringkasan','Ringkasan diperbarui.'); });
+      $('btnGoDaftar').addEventListener('click', () => setTab('daftar'));
+      $('btnSeed').addEventListener('click', seed);
+      $('btnWipe').addEventListener('click', wipeAll);
+
+      // Filters
+      ['q','filterJenis','filterStatus','filterKepatuhan'].forEach(id => {
+        $(id).addEventListener('input', () => { page = 1; renderTable(); });
+        $(id).addEventListener('change', () => { page = 1; renderTable(); });
+      });
+
+      $('btnClearFilters').addEventListener('click', () => {
+        $('q').value = '';
+        $('filterJenis').value = '';
+        $('filterStatus').value = '';
+        $('filterKepatuhan').value = '';
+        page = 1;
+        renderTable();
+        toast('ok','Filter','Filter dibersihkan.');
+      });
+
+      $('btnPrev').addEventListener('click', () => { page = Math.max(1, page - 1); renderTable(); });
+      $('btnNext').addEventListener('click', () => {
+        const totalPages = Math.max(1, Math.ceil(filteredRecords().length / PAGE_SIZE));
+        page = Math.min(totalPages, page + 1);
+        renderTable();
+      });
+
+      // Export buttons
+      $('btnExportJson').addEventListener('click', exportJSON);
+      $('btnExportCsv').addEventListener('click', exportCSV);
+      $('btnExportJson2').addEventListener('click', exportJSON);
+      $('btnExportCsv2').addEventListener('click', exportCSV);
+
+      // Import
+      $('btnValidate').addEventListener('click', validateImport);
+      $('btnImport').addEventListener('click', doImport);
+      $('btnCopyJson').addEventListener('click', copyJSON);
+      $('btnRestoreFromPaste').addEventListener('click', restoreFromPaste);
+
+      // Modal
+      $('btnModalClose').addEventListener('click', closeModal);
+      $('modalBackdrop').addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          closeHelp();
+        }
+      });
+
+      // Help modal
+      $('btnHelp').addEventListener('click', openHelp);
+      $('btnHelpClose').addEventListener('click', closeHelp);
+      $('helpBackdrop').addEventListener('click', closeHelp);
+      $('btnHelpGoImex').addEventListener('click', () => { closeHelp(); setTab('imex'); window.scrollTo({top:0, behavior:'smooth'}); });
+
+      // Ensure last save on close (best-effort)
+      window.addEventListener('beforeunload', () => {
+        try { save(); } catch {}
+      });
+
+      // Encourage
+      if (db.length === 0) {
+        toast('warn','Mulai', 'Database masih kosong. Anda bisa input data atau gunakan "Tambahkan Contoh Data".');
+      }
+    }
+
+    function openHelp(){ $('helpModal').classList.remove('hidden'); }
+    function closeHelp(){ $('helpModal').classList.add('hidden'); }
+
+    // =============== AUTH (Login Lokal) ===============
+    const AUTH_KEY = 'wpd_auth_v1';
+    const SESSION_KEY = 'wpd_session_v1';
+
+    async function sha256Hex(text) {
+      const enc = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      const arr = Array.from(new Uint8Array(buf));
+      return arr.map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    async function ensureAuthConfig() {
+      // simpan hash default pertama kali
+      const raw = localStorage.getItem(AUTH_KEY);
+      if (raw) return;
+      const passHash = await sha256Hex('admin123');
+      const payload = { user: 'admin', passHash, createdAt: new Date().toISOString() };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(payload));
+    }
+
+    function showAuthGate(show) {
+      const gate = $('authGate');
+      const shell = $('appShell');
+      gate.classList.toggle('hidden', !show);
+      shell.classList.toggle('hidden', show);
+      if (show) {
+        setLoginError('');
+        $('loginPass').value = '';
+        $('loginUser').focus();
+      }
+    }
+
+    function setLoginError(msg) {
+      const el = $('loginError');
+      if (!msg) {
+        el.classList.add('hidden');
+        el.textContent = '';
+        return;
+      }
+      el.classList.remove('hidden');
+      el.textContent = msg;
+    }
+
+    async function verifyLogin(user, pass) {
+      const conf = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
+      const inputHash = await sha256Hex(String(pass || ''));
+      return conf?.user === user && conf?.passHash === inputHash;
+    }
+
+    function isSessionValid() {
+      try {
+        const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        if (!s) return false;
+        if (s.expiresAt && new Date(s.expiresAt).getTime() < Date.now()) return false;
+        return s.loggedIn === true;
+      } catch {
+        return false;
+      }
+    }
+
+    function createSession(remember) {
+      // default: 8 jam jika remember, 1 jam jika tidak
+      const hours = remember ? 8 : 1;
+      const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ loggedIn: true, expiresAt }));
+    }
+
+    function clearSession() {
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    async function doLogin() {
+      setLoginError('');
+      const user = $('loginUser').value.trim();
+      const pass = $('loginPass').value;
+      if (!user || !pass) {
+        setLoginError('Username dan password wajib diisi.');
+        return;
+      }
+      const ok = await verifyLogin(user, pass);
+      if (!ok) {
+        setLoginError('Login gagal. Periksa username/password.');
+        return;
+      }
+      createSession($('rememberMe').checked);
+      showAuthGate(false);
+      toast('ok','Login berhasil',`Selamat datang, ${user}.`);
+      // init aplikasi setelah login
+      init().catch(() => {
+        toast('error','Inisialisasi gagal','Gagal memuat database. Coba refresh halaman.');
+      });
+    }
+
+    async function changePasswordFlow() {
+      const conf = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
+      const current = prompt('Masukkan password lama (saat ini):');
+      if (current === null) return;
+      const ok = await verifyLogin(conf.user || 'admin', current);
+      if (!ok) {
+        alert('Password lama salah.');
+        return;
+      }
+      const next = prompt('Masukkan password baru (min. 6 karakter):');
+      if (next === null) return;
+      if (String(next).length < 6) {
+        alert('Password baru terlalu pendek.');
+        return;
+      }
+      const again = prompt('Ulangi password baru:');
+      if (again === null) return;
+      if (again !== next) {
+        alert('Konfirmasi password tidak sama.');
+        return;
+      }
+      conf.passHash = await sha256Hex(next);
+      conf.updatedAt = new Date().toISOString();
+      localStorage.setItem(AUTH_KEY, JSON.stringify(conf));
+      alert('Password berhasil diubah.');
+    }
+
+    async function boot() {
+      await ensureAuthConfig();
+
+      // Wire auth UI
+      $('btnLogin')?.addEventListener('click', doLogin);
+      $('loginPass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+      $('loginUser')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+      $('btnTogglePass')?.addEventListener('click', () => {
+        const ip = $('loginPass');
+        const isPw = ip.type === 'password';
+        ip.type = isPw ? 'text' : 'password';
+        $('btnTogglePass').textContent = isPw ? 'Sembunyi' : 'Lihat';
+        ip.focus();
+      });
+      $('btnAuthHelp')?.addEventListener('click', () => {
+        // buka panduan tanpa harus login
+        openHelp();
+      });
+
+      // Logout button in header
+      $('btnLogout')?.addEventListener('click', async () => {
+        const ok = confirm('Keluar dari aplikasi?');
+        if (!ok) return;
+        clearSession();
+        // reset state ringan
+        closeModal();
+        closeHelp();
+        toast('warn','Keluar','Anda telah logout.');
+        // tampilkan gate
+        showAuthGate(true);
+      });
+
+      // Offer change password from help (right click alternative) - simple: double click brand
+      document.querySelectorAll('.brand-badge').forEach(b => {
+        b.addEventListener('dblclick', () => {
+          const ok = confirm('Ubah password login?');
+          if (!ok) return;
+          changePasswordFlow();
+        });
+      });
+
+      if (isSessionValid()) {
+        showAuthGate(false);
+        init().catch(() => {
+          toast('error','Inisialisasi gagal','Gagal memuat database. Coba refresh halaman.');
+        });
+      } else {
+        showAuthGate(true);
+      }
+    }
+
+    boot().catch(() => {
+      // fallback: jika crypto/indexeddb error
+      showAuthGate(true);
+      setLoginError('Gagal memulai aplikasi. Coba refresh halaman.');
+    });
+  </script>
+
+  </div>
+</body>
+</html>
