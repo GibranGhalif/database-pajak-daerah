@@ -317,7 +317,7 @@
               <p class="text-xs text-slate-600">Akses aplikasi Database Wajib Pajak Daerah (offline).</p>
             </div>
           </div>
-          <span class="chip bg-white/80 border-slate-200 text-slate-700">Mode: Lokal</span>
+          <span id="modeBadge" class="chip bg-white/80 border-slate-200 text-slate-700">Mode: Lokal</span>
         </div>
 
         <div class="mt-5 space-y-3">
@@ -386,8 +386,10 @@
         <button id="tabRef" class="tab" data-tab="referensi">Referensi</button>
         <span class="hidden md:inline-block w-px h-6 bg-slate-200 mx-1 self-center"></span>
         <button id="btnHelp" class="btn btn-ghost" type="button" title="Panduan penggunaan & cara hosting">Panduan Web</button>
+        <button id="btnCloud" class="btn btn-ghost" type="button" title="Koneksi database online (cloud)">Koneksi Cloud</button>
         <button id="btnLogout" class="btn btn-ghost" type="button" title="Keluar">Keluar</button>
         <span id="userBadge" class="chip bg-white/80 border-slate-200 text-slate-700">User: —</span>
+        <span id="cloudBadge" class="chip bg-white/80 border-slate-200 text-slate-700">Cloud: —</span>
         <span id="storageBadge" class="chip bg-white/80 border-slate-200 text-slate-700">Penyimpanan: —</span>
       </div>
     </div>
@@ -926,7 +928,7 @@
               <div class="rounded-xl border border-slate-200 bg-white p-4">
                 <p class="font-extrabold">Catatan penting (offline & privasi)</p>
                 <ul class="mt-2 list-disc pl-5 space-y-1 text-slate-700">
-                  <li>Aplikasi ini <span class="font-semibold">tidak mengirim data ke server</span>. Data tersimpan di perangkat/browser yang digunakan.</li>
+                  <li>Secara default aplikasi ini <span class="font-semibold">tidak mengirim data ke server</span> (mode lokal). Jika fitur <span class="font-semibold">Koneksi Cloud</span> diaktifkan, data akan disinkronkan ke server yang Anda konfigurasi.</li>
                   <li>Jika komputer dibersihkan cache/site-data, data dapat hilang. Lakukan <span class="font-semibold">backup JSON</span> secara berkala.</li>
                   <li>Untuk penggunaan multi-user/produksi, pertimbangkan versi dengan <span class="font-semibold">database server, login, otorisasi, audit log, dan enkripsi</span>.</li>
                 </ul>
@@ -974,8 +976,120 @@ http://localhost:8080</pre>
       </div>
     </div>
 
+    <!-- Cloud Modal (Koneksi Online) -->
+    <div id="cloudModal" class="fixed inset-0 z-50 hidden">
+      <div class="modal-backdrop absolute inset-0 bg-black/40" id="cloudBackdrop"></div>
+      <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center p-0 md:p-6">
+        <div class="modal-panel bg-white w-full md:max-w-3xl md:rounded-2xl rounded-t-2xl border border-slate-200 shadow-xl max-h-[85vh] overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-600">Koneksi</p>
+              <h3 class="text-base font-extrabold">Database Online (Cloud Sync)</h3>
+              <p class="help mt-1">Mode ini menyinkronkan data antar perangkat. Disarankan untuk pemakaian multi-user memakai backend resmi (auth, otorisasi, audit).</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnCloudClose" class="btn btn-ghost px-3 py-2" type="button">Tutup</button>
+            </div>
+          </div>
+
+          <div class="p-4 overflow-auto max-h-[70vh]">
+            <div class="space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+                  <div>
+                    <p class="text-sm font-extrabold">Aktifkan Cloud</p>
+                    <p class="help">Simpan data ke server (contoh: Supabase Postgres) agar bisa diakses online.</p>
+                  </div>
+                  <label class="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input id="cloudEnabled" type="checkbox" class="accent-slate-900" />
+                    Aktif
+                  </label>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="label">Provider</label>
+                    <select id="cloudProvider" class="input">
+                      <option value="supabase">Supabase (REST)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label">Tenant/Kode Daerah</label>
+                    <input id="cloudTenant" class="input" placeholder="contoh: pemda-kotax" />
+                    <p class="help mt-1">Dipakai untuk memisahkan data antar instansi/daerah pada 1 tabel.</p>
+                  </div>
+
+                  <div class="md:col-span-2">
+                    <label class="label">Supabase Project URL</label>
+                    <input id="cloudUrl" class="input" placeholder="https://xxxx.supabase.co" />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="label">Supabase Anon Key</label>
+                    <input id="cloudKey" class="input" placeholder="eyJhbGciOi..." />
+                    <p class="help mt-1">Jangan gunakan service_role key di browser. Atur RLS/Policy di Supabase untuk keamanan.</p>
+                  </div>
+
+                  <div>
+                    <label class="label">Nama Tabel</label>
+                    <input id="cloudTable" class="input" placeholder="wpd_records" />
+                  </div>
+                  <div>
+                    <label class="label">Strategi Sinkronisasi</label>
+                    <select id="cloudSyncStrategy" class="input">
+                      <option value="pull">Tarik dari Cloud → Ganti Lokal (Pull)</option>
+                      <option value="push">Kirim Lokal → Ganti Cloud (Push)</option>
+                      <option value="merge">Gabung (Merge by ID)</option>
+                    </select>
+                    <p class="help mt-1">Jika ragu: pilih <span class="font-semibold">Merge</span>.</p>
+                  </div>
+                </div>
+
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button id="btnCloudTest" class="btn btn-ghost" type="button">Test Koneksi</button>
+                  <button id="btnCloudSyncNow" class="btn btn-primary" type="button">Simpan & Sinkronkan</button>
+                  <span id="cloudStatus" class="help"></span>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-sm font-extrabold">Skema tabel Supabase (contoh)</p>
+                <p class="help mt-1">Buat tabel (mis. <span class="mono">wpd_records</span>) dengan kolom minimal:</p>
+                <pre class="mt-3 text-xs bg-white border border-slate-200 rounded-xl p-3 overflow-auto">-- PostgreSQL (di Supabase)
+create table if not exists public.wpd_records (
+  id text primary key,
+  tenant text not null,
+  record jsonb not null,
+  updated_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create index if not exists wpd_records_tenant_idx on public.wpd_records(tenant);
+
+-- RLS (contoh sederhana; sesuaikan kebijakan keamanan instansi Anda)
+alter table public.wpd_records enable row level security;
+
+-- Kebijakan demo (membolehkan anon key membaca/menulis untuk tenant tertentu)
+-- Disarankan gunakan Supabase Auth + policy berbasis user/role.
+create policy "allow_anon_all" on public.wpd_records
+for all
+to anon
+using (true)
+with check (true);</pre>
+                <p class="help mt-3">Catatan: policy di atas hanya contoh demo. Untuk produksi, gunakan autentikasi resmi dan batasi akses.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 border-t border-slate-200 flex items-center justify-between gap-2">
+            <span class="help">Setelah aktif, status di header akan berubah menjadi <span class="font-semibold">Cloud: Online</span>.</span>
+            <button id="btnCloudDisable" class="btn btn-danger" type="button">Matikan Cloud</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <footer class="no-print mt-10 pb-10 text-center text-xs text-slate-500">
-      <p>Data disimpan di perangkat Anda (IndexedDB/localStorage). Login bersifat lokal (client-side). Untuk penggunaan produksi, pertimbangkan database server, autentikasi, audit log, dan enkripsi.</p>
+      <p>Data disimpan di perangkat Anda (IndexedDB/localStorage). Anda bisa mengaktifkan <span class="font-semibold">Koneksi Cloud</span> untuk sinkronisasi online antar perangkat. Login pada versi ini bersifat lokal (client-side). Untuk produksi multi-user: gunakan backend + autentikasi resmi, otorisasi, audit log, dan enkripsi.</p>
     </footer>
   </main>
 
@@ -1230,9 +1344,23 @@ http://localhost:8080</pre>
       ]
     };
 
+    // Tambahkan field standar titik koordinat ke semua jenis pajak (jika belum ada)
+    const COORD_FIELD = {
+      key: 'titikKoordinat',
+      label: 'Titik Koordinat (Lat, Long)',
+      type: 'text',
+      placeholder: 'Contoh: -7.123, 110.123'
+    };
+    Object.keys(TYPE_FIELDS).forEach((jenis) => {
+      const arr = TYPE_FIELDS[jenis] || [];
+      const exists = arr.some(f => f && f.key === COORD_FIELD.key);
+      if (!exists) arr.push({ ...COORD_FIELD });
+    });
+
     const FIELD_HINTS = {
       nop: 'NOP wajib untuk PBB; untuk BPHTB bisa opsional tergantung objek/berkas.',
-      periode: 'Periode dapat mengikuti masa pajak yang diatur pemda (bulanan/triwulan/tahunan).'
+      periode: 'Periode dapat mengikuti masa pajak yang diatur pemda (bulanan/triwulan/tahunan).',
+      titikKoordinat: 'Format contoh: -7.123, 110.123 (lintang, bujur).'
     };
 
     // =============== STATE ===============
@@ -1307,6 +1435,10 @@ http://localhost:8080</pre>
         x.status = normalizeStatus(x.status);
         x.statusKepatuhan = normalizeKepatuhan(x.statusKepatuhan);
         if (!x.dataKhusus || typeof x.dataKhusus !== 'object') x.dataKhusus = {};
+        // stabilkan field koordinat (opsional)
+        if (typeof x.dataKhusus.titikKoordinat === 'undefined' || x.dataKhusus.titikKoordinat === null) {
+          x.dataKhusus.titikKoordinat = '';
+        }
         return x;
       });
     }
@@ -1319,6 +1451,8 @@ http://localhost:8080</pre>
     function save() {
       // Fire-and-forget. Jika gagal, tampilkan toast.
       dbSaveAll(db).catch(() => toast('error','Penyimpanan gagal','Gagal menyimpan ke database browser. Coba refresh, atau gunakan ekspor JSON sebagai backup.'));
+      // best-effort cloud auto-sync (merge) jika diaktifkan
+      try { cloudAutoSyncAfterSave(); } catch {}
     }
 
     function toCSV(records) {
@@ -1370,7 +1504,7 @@ http://localhost:8080</pre>
         record.jenisPajak, record.kategori, record.nama, record.namaUsaha,
         record.nik, record.npwp, record.alamat, record.telp, record.email,
         record.alamatObjek, record.keterangan, record.status, record.statusKepatuhan,
-        khas.nop, khas.noPolisi, khas.noRangka, khas.noIzin
+        khas.nop, khas.noPolisi, khas.noRangka, khas.noIzin, khas.titikKoordinat
       ].map(normalizeQuery).join(' | ');
       return hay.includes(q);
     }
@@ -2253,7 +2387,7 @@ http://localhost:8080</pre>
           statusKepatuhan: 'Patuh',
           alamatObjek: 'Simpang 4 Alun-alun Kota X',
           keterangan: 'Reklame LED 1 titik.',
-          dataKhusus: { jenisReklame: 'Videotron/LED', ukuran: '4 x 6 m', jumlah: 1, masaTayang: '30 hari', nilaiSewa: 25000000 }
+          dataKhusus: { jenisReklame: 'Videotron/LED', ukuran: '4 x 6 m', jumlah: 1, masaTayang: '30 hari', nilaiSewa: 25000000, titikKoordinat: '-7.145, 110.401' }
         },
         {
           id: uid(),
@@ -2273,7 +2407,7 @@ http://localhost:8080</pre>
           statusKepatuhan: 'Patuh',
           alamatObjek: 'Perum Griya Sejahtera Blok C-2, Kota X',
           keterangan: 'Objek rumah tinggal.',
-          dataKhusus: { nop: '33.12.123.456.789-0123.0', luasTanah: 120, luasBangunan: 90, njopTanah: 240000000, njopBangunan: 180000000, pemanfaatan: 'Perumahan' }
+          dataKhusus: { nop: '33.12.123.456.789-0123.0', luasTanah: 120, luasBangunan: 90, njopTanah: 240000000, njopBangunan: 180000000, pemanfaatan: 'Perumahan', titikKoordinat: '-7.133, 110.390' }
         },
         {
           id: uid(),
@@ -2293,7 +2427,7 @@ http://localhost:8080</pre>
           statusKepatuhan: 'Tidak Patuh',
           alamatObjek: 'Jl. Kenanga No. 5, Kota X',
           keterangan: 'Pelaporan omzet bulanan.',
-          dataKhusus: { jenisUsaha: 'Kafe', omzet: 125000000, periode: 'Jan 2025', jumlahOutlet: 1 }
+          dataKhusus: { jenisUsaha: 'Kafe', omzet: 125000000, periode: 'Jan 2025', jumlahOutlet: 1, titikKoordinat: '-7.152, 110.412' }
         },
         {
           id: uid(),
@@ -2313,7 +2447,7 @@ http://localhost:8080</pre>
           statusKepatuhan: 'Patuh',
           alamatObjek: '',
           keterangan: 'Kendaraan roda 4.',
-          dataKhusus: { noPolisi: 'B 1234 CD', merkTipe: 'Toyota Avanza', tahun: 2021, noRangka: 'MHFK1234567890', njkb: 180000000 }
+          dataKhusus: { noPolisi: 'B 1234 CD', merkTipe: 'Toyota Avanza', tahun: 2021, noRangka: 'MHFK1234567890', njkb: 180000000, titikKoordinat: '-7.165, 110.425' }
         }
       ];
 
@@ -2354,6 +2488,8 @@ http://localhost:8080</pre>
       renderTable();
       renderJenisList();
       renderDashboard();
+      // update cloud/mode badges after init
+      try { renderCloudBadge(); renderModeBadge(); } catch {}
 
       // Tabs
       document.querySelectorAll('[data-tab]').forEach(btn => {
@@ -2424,6 +2560,7 @@ http://localhost:8080</pre>
         if (e.key === 'Escape') {
           closeModal();
           closeHelp();
+          closeCloudModal();
         }
       });
 
@@ -2446,6 +2583,295 @@ http://localhost:8080</pre>
 
     function openHelp(){ $('helpModal').classList.remove('hidden'); }
     function closeHelp(){ $('helpModal').classList.add('hidden'); }
+
+    // =============== CLOUD SYNC (Supabase REST) ===============
+    // Catatan:
+    // - Ini membuat aplikasi bisa "online" dengan menyinkronkan data ke server.
+    // - Karena ini single-file static, keamanan akses server HARUS diatur dari sisi backend (RLS/policy).
+    // - Disarankan gunakan Supabase Auth / backend sendiri untuk produksi.
+
+    const CLOUD_KEY = 'wpd_cloud_v1';
+
+    function cloudDefaultConfig() {
+      return {
+        enabled: false,
+        provider: 'supabase',
+        tenant: '',
+        url: '',
+        anonKey: '',
+        table: 'wpd_records',
+        strategy: 'merge',
+        lastSyncAt: null
+      };
+    }
+
+    function cloudGet() {
+      try {
+        return { ...cloudDefaultConfig(), ...(JSON.parse(localStorage.getItem(CLOUD_KEY) || 'null') || {}) };
+      } catch {
+        return cloudDefaultConfig();
+      }
+    }
+
+    function cloudSet(next) {
+      localStorage.setItem(CLOUD_KEY, JSON.stringify(next));
+      renderCloudBadge();
+      renderModeBadge();
+    }
+
+    function cloudIsConfigured(conf) {
+      if (!conf) return false;
+      if (!conf.url || !conf.anonKey || !conf.table) return false;
+      if (!conf.tenant) return false;
+      return true;
+    }
+
+    function renderCloudBadge() {
+      const el = $('cloudBadge');
+      if (!el) return;
+      const conf = cloudGet();
+      if (!conf.enabled) {
+        el.textContent = 'Cloud: Off';
+        return;
+      }
+      if (!cloudIsConfigured(conf)) {
+        el.textContent = 'Cloud: Perlu konfigurasi';
+        return;
+      }
+      const last = conf.lastSyncAt ? new Date(conf.lastSyncAt).toLocaleString('id-ID') : '—';
+      el.textContent = `Cloud: Online • Sync: ${last}`;
+    }
+
+    function renderModeBadge() {
+      const el = $('modeBadge');
+      if (!el) return;
+      const conf = cloudGet();
+      el.textContent = conf.enabled ? 'Mode: Cloud' : 'Mode: Lokal';
+    }
+
+    function openCloudModal() {
+      const conf = cloudGet();
+      $('cloudEnabled').checked = !!conf.enabled;
+      $('cloudProvider').value = conf.provider || 'supabase';
+      $('cloudTenant').value = conf.tenant || '';
+      $('cloudUrl').value = conf.url || '';
+      $('cloudKey').value = conf.anonKey || '';
+      $('cloudTable').value = conf.table || 'wpd_records';
+      $('cloudSyncStrategy').value = conf.strategy || 'merge';
+      setCloudStatus(conf.enabled ? 'Siap. Anda bisa test koneksi atau sinkronkan.' : 'Cloud belum aktif.');
+      $('cloudModal').classList.remove('hidden');
+    }
+
+    function closeCloudModal() {
+      $('cloudModal').classList.add('hidden');
+    }
+
+    function setCloudStatus(msg, type = 'info') {
+      const el = $('cloudStatus');
+      if (!el) return;
+      if (!msg) {
+        el.textContent = '';
+        return;
+      }
+      el.textContent = msg;
+      el.className = 'help ' + (type === 'error' ? 'text-red-700' : type === 'ok' ? 'text-emerald-700' : '');
+    }
+
+    function supabaseHeaders(conf) {
+      return {
+        apikey: conf.anonKey,
+        Authorization: `Bearer ${conf.anonKey}`,
+        'Content-Type': 'application/json'
+      };
+    }
+
+    function supabaseUrl(conf, path) {
+      const base = (conf.url || '').replace(/\/+$/,'');
+      return `${base}/rest/v1/${path}`;
+    }
+
+    async function cloudTestConnection() {
+      const conf = cloudGet();
+      if (!cloudIsConfigured(conf)) {
+        setCloudStatus('Konfigurasi belum lengkap (tenant, URL, key, table).', 'error');
+        toast('warn', 'Cloud', 'Konfigurasi cloud belum lengkap.');
+        return false;
+      }
+      try {
+        // Simple HEAD/GET: ambil 1 row
+        const url = supabaseUrl(conf, `${encodeURIComponent(conf.table)}?tenant=eq.${encodeURIComponent(conf.tenant)}&select=id&limit=1`);
+        const res = await fetch(url, { headers: supabaseHeaders(conf) });
+        if (!res.ok) {
+          const t = await res.text().catch(()=> '');
+          throw new Error(`HTTP ${res.status} ${res.statusText} ${t}`);
+        }
+        setCloudStatus('Koneksi OK. Anda bisa sinkronkan sekarang.', 'ok');
+        toast('ok','Cloud','Koneksi berhasil.');
+        return true;
+      } catch (e) {
+        setCloudStatus('Gagal konek: ' + (e?.message || String(e)), 'error');
+        toast('error','Cloud','Gagal koneksi ke server.');
+        return false;
+      }
+    }
+
+    async function cloudPullReplace() {
+      const conf = cloudGet();
+      const url = supabaseUrl(conf, `${encodeURIComponent(conf.table)}?tenant=eq.${encodeURIComponent(conf.tenant)}&select=record`);
+      const res = await fetch(url, { headers: supabaseHeaders(conf) });
+      if (!res.ok) throw new Error(`Pull gagal: HTTP ${res.status}`);
+      const rows = await res.json();
+      const arr = rows.map(x => x.record).filter(Boolean);
+      db = migrateRecords(arr);
+      save();
+      refreshAll();
+    }
+
+    async function cloudPushReplace() {
+      const conf = cloudGet();
+
+      // Hapus semua data tenant, lalu insert ulang.
+      const delUrl = supabaseUrl(conf, `${encodeURIComponent(conf.table)}?tenant=eq.${encodeURIComponent(conf.tenant)}`);
+      const delRes = await fetch(delUrl, { method: 'DELETE', headers: supabaseHeaders(conf) });
+      if (!delRes.ok && delRes.status !== 204) {
+        const t = await delRes.text().catch(()=> '');
+        throw new Error(`Delete tenant gagal: HTTP ${delRes.status} ${t}`);
+      }
+
+      const rows = migrateRecords(db).map(r => ({
+        id: r.id,
+        tenant: conf.tenant,
+        record: r,
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+
+      // upsert (POST with Prefer: resolution=merge-duplicates)
+      const insUrl = supabaseUrl(conf, `${encodeURIComponent(conf.table)}`);
+      const insRes = await fetch(insUrl, {
+        method: 'POST',
+        headers: { ...supabaseHeaders(conf), Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify(rows)
+      });
+      if (!insRes.ok) {
+        const t = await insRes.text().catch(()=> '');
+        throw new Error(`Push gagal: HTTP ${insRes.status} ${t}`);
+      }
+    }
+
+    async function cloudMergeById() {
+      const conf = cloudGet();
+
+      // pull all
+      const url = supabaseUrl(conf, `${encodeURIComponent(conf.table)}?tenant=eq.${encodeURIComponent(conf.tenant)}&select=record`);
+      const res = await fetch(url, { headers: supabaseHeaders(conf) });
+      if (!res.ok) throw new Error(`Merge pull gagal: HTTP ${res.status}`);
+      const rows = await res.json();
+      const remote = migrateRecords(rows.map(x => x.record).filter(Boolean));
+
+      // merge by id; prefer record with latest updatedAt
+      const map = new Map();
+      const all = [...remote, ...migrateRecords(db)];
+      all.forEach(r => {
+        const cur = map.get(r.id);
+        if (!cur) { map.set(r.id, r); return; }
+        const t1 = new Date(cur.updatedAt || cur.createdAt || 0).getTime();
+        const t2 = new Date(r.updatedAt || r.createdAt || 0).getTime();
+        map.set(r.id, t2 >= t1 ? r : cur);
+      });
+      db = Array.from(map.values()).sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+      save();
+      refreshAll();
+
+      // push merged -> upsert
+      const upRows = migrateRecords(db).map(r => ({
+        id: r.id,
+        tenant: conf.tenant,
+        record: r,
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      const insUrl = supabaseUrl(conf, `${encodeURIComponent(conf.table)}`);
+      const insRes = await fetch(insUrl, {
+        method: 'POST',
+        headers: { ...supabaseHeaders(conf), Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify(upRows)
+      });
+      if (!insRes.ok) {
+        const t = await insRes.text().catch(()=> '');
+        throw new Error(`Merge push gagal: HTTP ${insRes.status} ${t}`);
+      }
+    }
+
+    async function cloudSyncNow() {
+      const conf = cloudGet();
+
+      // read UI values -> save config
+      const next = {
+        enabled: $('cloudEnabled').checked,
+        provider: $('cloudProvider').value,
+        tenant: $('cloudTenant').value.trim(),
+        url: $('cloudUrl').value.trim(),
+        anonKey: $('cloudKey').value.trim(),
+        table: $('cloudTable').value.trim() || 'wpd_records',
+        strategy: $('cloudSyncStrategy').value,
+        lastSyncAt: conf.lastSyncAt
+      };
+
+      cloudSet(next);
+
+      if (!next.enabled) {
+        setCloudStatus('Cloud dimatikan. Data tetap tersimpan di perangkat.', 'ok');
+        toast('warn','Cloud','Cloud dimatikan (mode lokal).');
+        return;
+      }
+      if (!cloudIsConfigured(next)) {
+        setCloudStatus('Konfigurasi belum lengkap (tenant, URL, key, table).', 'error');
+        toast('warn','Cloud','Konfigurasi cloud belum lengkap.');
+        return;
+      }
+
+      setCloudStatus('Sinkronisasi berjalan...', 'info');
+      try {
+        if (next.strategy === 'pull') {
+          const ok = confirm('Mode PULL akan mengganti data lokal dengan data dari cloud. Lanjut?');
+          if (!ok) { setCloudStatus('Dibatalkan.', 'info'); return; }
+          await cloudPullReplace();
+        } else if (next.strategy === 'push') {
+          const ok = confirm('Mode PUSH akan mengganti data cloud dengan data lokal. Lanjut?');
+          if (!ok) { setCloudStatus('Dibatalkan.', 'info'); return; }
+          await cloudPushReplace();
+        } else {
+          await cloudMergeById();
+        }
+
+        const saved = cloudGet();
+        cloudSet({ ...saved, lastSyncAt: new Date().toISOString() });
+        setCloudStatus('Sinkronisasi selesai.', 'ok');
+        toast('ok','Cloud','Sinkronisasi berhasil.');
+      } catch (e) {
+        setCloudStatus('Sinkronisasi gagal: ' + (e?.message || String(e)), 'error');
+        toast('error','Cloud','Sinkronisasi gagal.');
+      }
+    }
+
+    async function cloudAutoSyncAfterSave() {
+      // Light auto-sync: if enabled & configured, do merge in background (no confirm)
+      const conf = cloudGet();
+      if (!conf.enabled) return;
+      if (!cloudIsConfigured(conf)) return;
+      if (conf.strategy !== 'merge') return;
+
+      // debounce
+      clearTimeout(window.__cloudAutoTimer);
+      window.__cloudAutoTimer = setTimeout(async () => {
+        try {
+          await cloudMergeById();
+          const saved = cloudGet();
+          cloudSet({ ...saved, lastSyncAt: new Date().toISOString() });
+        } catch {
+          // silent: user can sync manually
+        }
+      }, 1200);
+    }
 
     // =============== AUTH (Login Lokal) ===============
     const AUTH_KEY = 'wpd_auth_v1';
@@ -2534,6 +2960,10 @@ http://localhost:8080</pre>
       const shell = $('appShell');
       gate.classList.toggle('hidden', !show);
       shell.classList.toggle('hidden', show);
+
+      // update mode badge (login screen)
+      try { renderModeBadge(); } catch {}
+
       if (show) {
         setActiveUserBadge('—');
         setLoginError('');
@@ -2651,6 +3081,8 @@ http://localhost:8080</pre>
       createSession(user, $('rememberMe').checked);
       showAuthGate(false);
       setActiveUserBadge(user);
+      renderCloudBadge();
+      renderModeBadge();
       toast('ok','Login berhasil',`Selamat datang, ${user}.`);
 
       // init aplikasi setelah login
@@ -2715,6 +3147,22 @@ http://localhost:8080</pre>
         openHelp();
       });
 
+      // Cloud modal (bisa dibuka sebelum login juga)
+      $('btnCloud')?.addEventListener('click', openCloudModal);
+      $('btnCloudClose')?.addEventListener('click', closeCloudModal);
+      $('cloudBackdrop')?.addEventListener('click', closeCloudModal);
+      $('btnCloudTest')?.addEventListener('click', cloudTestConnection);
+      $('btnCloudSyncNow')?.addEventListener('click', cloudSyncNow);
+      $('btnCloudDisable')?.addEventListener('click', () => {
+        const ok = confirm('Matikan Cloud? Data tetap ada di perangkat.');
+        if (!ok) return;
+        const conf = cloudGet();
+        cloudSet({ ...conf, enabled: false });
+        $('cloudEnabled').checked = false;
+        setCloudStatus('Cloud dimatikan.', 'ok');
+        toast('warn','Cloud','Cloud dimatikan (mode lokal).');
+      });
+
       $('btnChangePass')?.addEventListener('click', () => {
         changePasswordFlow();
       });
@@ -2744,6 +3192,7 @@ http://localhost:8080</pre>
         // reset state ringan
         closeModal();
         closeHelp();
+        closeCloudModal();
         toast('warn','Keluar','Anda telah logout.');
         // tampilkan gate
         showAuthGate(true);
@@ -2758,24 +3207,31 @@ http://localhost:8080</pre>
         });
       });
 
-      // init auth state display
+      // init status display
       renderLoginAttempts();
+      renderCloudBadge();
+      renderModeBadge();
 
       if (isSessionValid()) {
         const s = getSessionFromStorage();
         showAuthGate(false);
         setActiveUserBadge(s?.user || '—');
+        renderCloudBadge();
+        renderModeBadge();
         init().catch(() => {
           toast('error','Inisialisasi gagal','Gagal memuat database. Coba refresh halaman.');
         });
       } else {
         showAuthGate(true);
+        renderCloudBadge();
+        renderModeBadge();
       }
     }
 
     boot().catch(() => {
       // fallback: jika crypto/indexeddb error
       showAuthGate(true);
+      try { renderCloudBadge(); renderModeBadge(); } catch {}
       setLoginError('Gagal memulai aplikasi. Coba refresh halaman.');
     });
   </script>
