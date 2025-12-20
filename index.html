@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Database Wajib Pajak Daerah (UU 1/2022 & PP 35/2024)</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Excel (XLSX) support via SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Maps (Leaflet + OpenStreetMap) for PBB-P2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <style>
     :root {
       color-scheme: light;
@@ -293,6 +299,20 @@
 
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+    }
+
+    /* Leaflet map container */
+    .leaflet-wrap {
+      height: 520px;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(2, 6, 23, 0.10);
+      background: #fff;
+    }
+
+    @media (max-width: 768px) {
+      .leaflet-wrap { height: 62vh; }
     }
 
     @media print {
@@ -802,6 +822,7 @@
             <button id="btnClearFilters" class="btn btn-ghost px-3 py-1.5" type="button">Bersihkan Filter</button>
           </div>
           <div class="flex flex-wrap gap-2">
+            <button id="btnMapPbb" class="btn btn-ghost" type="button" title="Tampilkan peta koordinat untuk objek PBB-P2">Lihat Peta (PBB-P2)</button>
             <button id="btnExportCsv" class="btn btn-ghost" type="button">Ekspor CSV</button>
             <button id="btnExportJson" class="btn btn-ghost" type="button">Ekspor JSON</button>
           </div>
@@ -843,11 +864,13 @@
         <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
             <h3 class="text-sm font-extrabold">Ekspor</h3>
-            <p class="help mt-1">Ekspor JSON untuk backup lengkap; CSV untuk olah data di spreadsheet.</p>
+            <p class="help mt-1">Ekspor JSON untuk backup lengkap; CSV/XLSX untuk olah data di spreadsheet.</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <button id="btnExportJson2" class="btn btn-primary" type="button">Unduh JSON</button>
               <button id="btnExportCsv2" class="btn btn-ghost" type="button">Unduh CSV</button>
+              <button id="btnExportXlsx" class="btn btn-ghost" type="button">Unduh XLSX</button>
             </div>
+            <p class="help mt-3">Catatan: XLSX dibuat dari data saat ini dan cocok untuk Excel/LibreOffice.</p>
           </div>
 
           <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
@@ -871,6 +894,40 @@
               <button id="btnValidate" class="btn btn-ghost" type="button">Cek Format</button>
             </div>
             <pre id="importLog" class="mt-3 text-xs bg-white border border-slate-200 rounded-xl p-3 max-h-56 overflow-auto"></pre>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+            <h3 class="text-sm font-extrabold">Impor XLSX (Excel)</h3>
+            <p class="help mt-1">Format impor: file .xlsx hasil ekspor aplikasi ini (sheet <span class="mono">WP</span>). Jika dari sumber lain, pastikan kolom sesuai.</p>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="label">Mode Impor XLSX</label>
+                <select id="importXlsxMode" class="input">
+                  <option value="merge">Gabung (merge)</option>
+                  <option value="replace">Ganti semua (replace)</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">Pilih File XLSX</label>
+                <input id="importXlsxFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="input" />
+              </div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button id="btnImportXlsx" class="btn btn-primary" type="button">Impor XLSX</button>
+              <button id="btnValidateXlsx" class="btn btn-ghost" type="button">Cek Format</button>
+            </div>
+            <pre id="importXlsxLog" class="mt-3 text-xs bg-white border border-slate-200 rounded-xl p-3 max-h-56 overflow-auto"></pre>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-white p-4">
+            <h3 class="text-sm font-extrabold">Template XLSX (opsional)</h3>
+            <p class="help mt-1">Gunakan ekspor XLSX untuk mendapatkan template kolom yang sesuai.</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button id="btnDownloadXlsxTemplate" class="btn btn-ghost" type="button">Unduh Template XLSX (kosong)</button>
+            </div>
+            <p class="help mt-3">Tips: Kolom <span class="mono">dataKhusus</span> berisi JSON (mis. <span class="mono">{"nop":"...","titikKoordinat":"-7.1,110.4"}</span>).</p>
           </div>
         </div>
 
@@ -1019,6 +1076,51 @@ http://localhost:8080</pre>
           <div class="p-4 border-t border-slate-200 flex items-center justify-between">
             <span class="help">Tip: lakukan <span class="font-semibold">Ekspor JSON</span> sebelum pindah perangkat.</span>
             <button id="btnHelpGoImex" class="btn btn-primary" type="button">Buka Impor/Ekspor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Modal (PBB-P2) -->
+    <div id="mapModal" class="fixed inset-0 z-50 hidden">
+      <div class="modal-backdrop absolute inset-0 bg-black/40" id="mapBackdrop"></div>
+      <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center p-0 md:p-6">
+        <div class="modal-panel bg-white w-full md:max-w-6xl md:rounded-2xl rounded-t-2xl border border-slate-200 shadow-xl max-h-[88vh] overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-600">Peta</p>
+              <h3 class="text-base font-extrabold">PBB-P2 — Lokasi Objek (berdasarkan Titik Koordinat)</h3>
+              <p class="help mt-1">Menampilkan marker untuk <span class="font-semibold">Pajak Bumi dan Bangunan</span> dengan format koordinat <span class="mono">lat, long</span> (contoh: <span class="mono">-7.123, 110.123</span>).</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnMapFit" class="btn btn-ghost px-3 py-2" type="button">Zoom ke Semua</button>
+              <button id="btnMapClose" class="btn btn-ghost px-3 py-2" type="button">Tutup</button>
+            </div>
+          </div>
+
+          <div class="p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-auto" style="max-height: calc(88vh - 140px);">
+            <div class="lg:col-span-8">
+              <div id="leafletMap" class="leaflet-wrap"></div>
+              <div id="mapHint" class="mt-3 help"></div>
+            </div>
+            <div class="lg:col-span-4">
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-extrabold">Daftar Titik</p>
+                  <span id="mapCount" class="chip bg-white border-slate-200 text-slate-700">0</span>
+                </div>
+                <div class="mt-3">
+                  <input id="mapSearch" class="input" placeholder="Cari (nama/NOP/alamat)..." />
+                </div>
+                <div id="mapList" class="mt-3 space-y-2 max-h-[52vh] overflow-auto pr-1"></div>
+                <p class="help mt-3">Klik item untuk membuka detail WP.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 border-t border-slate-200 flex items-center justify-between">
+            <span id="mapMeta" class="help">—</span>
+            <button id="btnMapOpenOsm" class="btn btn-primary" type="button">Buka di OpenStreetMap</button>
           </div>
         </div>
       </div>
@@ -2258,6 +2360,7 @@ with check (true);</pre>
           <td class="px-4 py-3">
             <div class="flex justify-end gap-2">
               <button class="btn btn-ghost px-3 py-1.5" data-act="detail" data-id="${r.id}">Detail</button>
+              ${r.jenisPajak === 'Pajak Bumi dan Bangunan' ? `<button class="btn btn-ghost px-3 py-1.5" data-act="map" data-id="${r.id}" title="Lihat lokasi objek PBB-P2">Peta</button>` : ''}
               <button class="btn btn-ghost px-3 py-1.5" data-act="edit" data-id="${r.id}">Edit</button>
               <button class="btn btn-danger px-3 py-1.5" data-act="delete" data-id="${r.id}">Hapus</button>
             </div>
@@ -2273,6 +2376,19 @@ with check (true);</pre>
           if (act === 'detail') openDetail(id);
           if (act === 'edit') startEdit(id);
           if (act === 'delete') deleteRecord(id);
+          if (act === 'map') {
+            const r = db.find(x => x.id === id);
+            const coord = parseLatLng(r?.dataKhusus?.titikKoordinat);
+            if (!r || !coord) {
+              toast('warn','Peta','Koordinat belum diisi atau format tidak valid. Isi "Titik Koordinat" (lat, long) pada rincian PBB.');
+              return;
+            }
+            openMapModal(buildPbbPoints([r]), `Mode: 1 objek • ${r.nama} • ${r.dataKhusus?.nop ? 'NOP: ' + r.dataKhusus.nop : ''}`);
+            // zoom specific
+            setTimeout(() => {
+              try { __map?.setView([coord.lat, coord.lng], 18, { animate: true }); } catch {}
+            }, 260);
+          }
         });
       });
     }
@@ -2448,6 +2564,211 @@ with check (true);</pre>
       const csv = toCSV(db);
       download(`wpd-data-${new Date().toISOString().slice(0,10)}.csv`, csv, 'text/csv');
       toast('ok','Ekspor','CSV berhasil diunduh.');
+    }
+
+    // =============== XLSX (Excel) ===============
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const XLSX_HEADERS = [
+      'id','jenisPajak','kategori','nama','namaUsaha','nik','npwp','alamat','telp','email','tglDaftar','status','statusKepatuhan','alamatObjek','keterangan','dataKhusus'
+    ];
+
+    function ensureXlsxAvailable() {
+      if (typeof XLSX === 'undefined') {
+        toast('error','XLSX tidak tersedia','Library XLSX gagal dimuat. Pastikan koneksi internet saat pertama kali membuka halaman (untuk mengambil CDN).');
+        return false;
+      }
+      return true;
+    }
+
+    function toXlsxRows(records) {
+      return (records || []).map(r => {
+        const out = {};
+        XLSX_HEADERS.forEach(k => {
+          if (k === 'dataKhusus') out[k] = JSON.stringify(r.dataKhusus ?? {});
+          else out[k] = r[k] ?? '';
+        });
+        return out;
+      });
+    }
+
+    function parseDateToISO(value) {
+      if (!value) return '';
+      if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0,10);
+      const s = String(value).trim();
+      if (!s) return '';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      // Coba parsing native; ini bisa bergantung locale, tapi cukup untuk file ekspor sendiri.
+      const d = new Date(s);
+      if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0,10);
+      return '';
+    }
+
+    function parseDataKhususCell(v) {
+      if (v === null || typeof v === 'undefined') return {};
+      if (typeof v === 'object') return v; // kadang sheet_to_json bisa hasilkan object
+      const s = String(v).trim();
+      if (!s) return {};
+      // Support: JSON string
+      if (s.startsWith('{') || s.startsWith('[')) {
+        try {
+          const o = JSON.parse(s);
+          return (o && typeof o === 'object') ? o : {};
+        } catch {
+          return {};
+        }
+      }
+      // Jika bukan JSON, simpan sebagai catatan
+      return { catatan: s };
+    }
+
+    async function exportXLSX() {
+      if (!ensureXlsxAvailable()) return;
+      try {
+        const rows = toXlsxRows(db);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(rows, { header: XLSX_HEADERS, skipHeader: false });
+        // set column widths (rough)
+        ws['!cols'] = XLSX_HEADERS.map(h => ({ wch: Math.min(42, Math.max(12, h.length + 2)) }));
+        XLSX.utils.book_append_sheet(wb, ws, 'WP');
+
+        // Optional README sheet
+        const info = [
+          ['Aplikasi', 'Database Wajib Pajak Daerah'],
+          ['Rujukan', 'UU 1/2022 (HKPD) & PP 35/2024'],
+          ['Diekspor', new Date().toLocaleString('id-ID')],
+          ['Catatan', 'Sheet "WP" berisi data. Kolom dataKhusus berisi JSON string.'],
+        ];
+        const ws2 = XLSX.utils.aoa_to_sheet(info);
+        XLSX.utils.book_append_sheet(wb, ws2, 'README');
+
+        const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        download(`wpd-data-${new Date().toISOString().slice(0,10)}.xlsx`, out, XLSX_MIME);
+        toast('ok','Ekspor','XLSX berhasil diunduh.');
+      } catch (e) {
+        toast('error','Ekspor XLSX gagal', e?.message || 'Terjadi kesalahan saat membuat XLSX.');
+      }
+    }
+
+    async function downloadXlsxTemplate() {
+      if (!ensureXlsxAvailable()) return;
+      try {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([XLSX_HEADERS]);
+        ws['!cols'] = XLSX_HEADERS.map(h => ({ wch: Math.min(42, Math.max(12, h.length + 2)) }));
+        XLSX.utils.book_append_sheet(wb, ws, 'WP');
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ['Petunjuk'],
+          ['Isi sesuai kolom pada sheet WP. Kolom dataKhusus berisi JSON string (mis. {"nop":"...","titikKoordinat":"-7.1,110.4"}).'],
+          ['Untuk id/createdAt/updatedAt: boleh dikosongkan; aplikasi akan membuat otomatis saat impor.'],
+        ]);
+        XLSX.utils.book_append_sheet(wb, ws2, 'README');
+        const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        download(`wpd-template-${new Date().toISOString().slice(0,10)}.xlsx`, out, XLSX_MIME);
+        toast('ok','Template','Template XLSX berhasil diunduh.');
+      } catch {
+        toast('error','Template','Gagal membuat template XLSX.');
+      }
+    }
+
+    async function parseImportXLSXFile(file) {
+      if (!ensureXlsxAvailable()) throw new Error('Library XLSX tidak tersedia.');
+      if (!file) throw new Error('File XLSX tidak ditemukan.');
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheetName = wb.SheetNames.includes('WP') ? 'WP' : wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      if (!ws) throw new Error('Sheet XLSX tidak ditemukan.');
+
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+      if (!Array.isArray(json)) throw new Error('Gagal membaca isi sheet.');
+
+      // Normalize rows
+      const normalized = json.map(row => {
+        const y = {};
+        // Map known columns
+        XLSX_HEADERS.forEach(k => {
+          y[k] = (row?.[k] ?? row?.[k.toUpperCase()] ?? row?.[k.toLowerCase()] ?? '');
+        });
+
+        const obj = {
+          id: String(y.id || '').trim() || uid(),
+          jenisPajak: String(y.jenisPajak || '').trim(),
+          kategori: String(y.kategori || '').trim(),
+          nama: String(y.nama || '').trim(),
+          namaUsaha: String(y.namaUsaha || '').trim(),
+          nik: String(y.nik || '').trim(),
+          npwp: String(y.npwp || '').trim(),
+          alamat: String(y.alamat || '').trim(),
+          telp: String(y.telp || '').trim(),
+          email: String(y.email || '').trim(),
+          tglDaftar: parseDateToISO(y.tglDaftar),
+          status: normalizeStatus(String(y.status || '').trim()),
+          statusKepatuhan: normalizeKepatuhan(String(y.statusKepatuhan || '').trim()),
+          alamatObjek: String(y.alamatObjek || '').trim(),
+          keterangan: String(y.keterangan || '').trim(),
+          dataKhusus: parseDataKhususCell(y.dataKhusus),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        // fallback jenis/kategori bila kosong
+        if (!obj.jenisPajak) obj.jenisPajak = 'Tidak diketahui';
+        if (!obj.kategori) obj.kategori = 'Orang Pribadi';
+
+        // Pastikan titikKoordinat ada (konsisten dengan migrateRecords)
+        if (!obj.dataKhusus || typeof obj.dataKhusus !== 'object') obj.dataKhusus = {};
+        if (typeof obj.dataKhusus.titikKoordinat === 'undefined' || obj.dataKhusus.titikKoordinat === null) obj.dataKhusus.titikKoordinat = '';
+
+        return obj;
+      });
+
+      return migrateRecords(normalized);
+    }
+
+    async function validateImportXLSX() {
+      const f = $('importXlsxFile')?.files?.[0];
+      if (!f) {
+        $('importXlsxLog').textContent = 'Pilih file XLSX terlebih dahulu.';
+        toast('warn','Impor XLSX','Belum ada file dipilih.');
+        return;
+      }
+      try {
+        const arr = await parseImportXLSXFile(f);
+        const missingCore = arr.filter(r => !(r.jenisPajak && r.nama && r.alamat && r.tglDaftar)).length;
+        $('importXlsxLog').textContent = `OK. Terbaca ${arr.length} record dari XLSX.\nKekurangan field inti (jenis/nama/alamat/tglDaftar): ${missingCore}.\n\nSampel record pertama:\n` + JSON.stringify(arr[0], null, 2);
+        toast('ok','Cek format XLSX','File terlihat valid.');
+      } catch (e) {
+        $('importXlsxLog').textContent = 'Gagal: ' + (e?.message || String(e));
+        toast('error','Cek format XLSX','Gagal memvalidasi file XLSX.');
+      }
+    }
+
+    async function doImportXLSX() {
+      const f = $('importXlsxFile')?.files?.[0];
+      if (!f) {
+        toast('warn','Impor XLSX','Pilih file XLSX terlebih dahulu.');
+        return;
+      }
+      const mode = $('importXlsxMode')?.value || 'merge';
+      try {
+        const arr = await parseImportXLSXFile(f);
+        if (mode === 'replace') {
+          const ok = confirm(`Mode REPLACE akan mengganti semua data lokal. Lanjut? (impor ${arr.length} record)`);
+          if (!ok) return;
+          db = arr;
+        } else {
+          const map = new Map(db.map(x => [x.id, x]));
+          for (const r of arr) map.set(r.id, r);
+          db = Array.from(map.values()).sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+        }
+        save();
+        refreshAll();
+        $('importXlsxLog').textContent = `Impor XLSX berhasil (${arr.length} record), mode: ${mode}.`;
+        toast('ok','Impor XLSX','Data berhasil diimpor dari XLSX.');
+      } catch (e) {
+        $('importXlsxLog').textContent = 'Gagal: ' + (e?.message || String(e));
+        toast('error','Impor XLSX','Gagal mengimpor file XLSX.');
+      }
     }
 
     function parseImportJSON(text) {
@@ -2744,15 +3065,30 @@ with check (true);</pre>
         renderTable();
       });
 
+      // Map (PBB-P2)
+      $('btnMapPbb')?.addEventListener('click', () => {
+        const rows = filteredRecords();
+        const points = buildPbbPoints(rows);
+        const q = $('q').value?.trim() || '';
+        const meta = `Mode: daftar terfilter • PBB-P2: ${points.length} titik • Query: ${q || '—'}`;
+        openMapModal(points, meta);
+      });
+      $('btnMapClose')?.addEventListener('click', closeMapModal);
+      $('mapBackdrop')?.addEventListener('click', closeMapModal);
+
       // Export buttons
       $('btnExportJson').addEventListener('click', exportJSON);
       $('btnExportCsv').addEventListener('click', exportCSV);
       $('btnExportJson2').addEventListener('click', exportJSON);
       $('btnExportCsv2').addEventListener('click', exportCSV);
+      $('btnExportXlsx')?.addEventListener('click', exportXLSX);
+      $('btnDownloadXlsxTemplate')?.addEventListener('click', downloadXlsxTemplate);
 
       // Import
       $('btnValidate').addEventListener('click', validateImport);
       $('btnImport').addEventListener('click', doImport);
+      $('btnValidateXlsx')?.addEventListener('click', validateImportXLSX);
+      $('btnImportXlsx')?.addEventListener('click', doImportXLSX);
       $('btnCopyJson').addEventListener('click', copyJSON);
       $('btnRestoreFromPaste').addEventListener('click', restoreFromPaste);
 
@@ -2764,6 +3100,7 @@ with check (true);</pre>
           closeModal();
           closeHelp();
           closeCloudModal();
+          closeMapModal();
         }
       });
 
@@ -2786,6 +3123,204 @@ with check (true);</pre>
 
     function openHelp(){ $('helpModal').classList.remove('hidden'); }
     function closeHelp(){ $('helpModal').classList.add('hidden'); }
+
+    // =============== MAP (Leaflet) — PBB-P2 ===============
+    let __map = null;
+    let __mapLayer = null;
+    let __mapMarkers = [];
+    let __mapLastPoints = [];
+
+    function parseLatLng(text) {
+      const s = safeText(text).trim();
+      if (!s) return null;
+      const parts = s.split(',').map(x => x.trim()).filter(Boolean);
+      if (parts.length < 2) return null;
+      const lat = Number(parts[0]);
+      const lng = Number(parts[1]);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+      if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+      return { lat, lng };
+    }
+
+    function ensureLeafletAvailable() {
+      if (typeof L === 'undefined') {
+        toast('error','Peta tidak tersedia','Library Leaflet gagal dimuat. Pastikan koneksi internet saat pertama kali membuka halaman (untuk mengambil CDN).');
+        return false;
+      }
+      return true;
+    }
+
+    function buildPbbPoints(records) {
+      return (records || [])
+        .filter(r => r.jenisPajak === 'Pajak Bumi dan Bangunan')
+        .map(r => {
+          const coord = parseLatLng(r?.dataKhusus?.titikKoordinat);
+          return {
+            id: r.id,
+            nama: r.nama,
+            alamatObjek: r.alamatObjek || r.alamat,
+            nop: r?.dataKhusus?.nop || '',
+            status: r.status,
+            kepatuhan: r.statusKepatuhan,
+            coord
+          };
+        })
+        .filter(x => !!x.coord);
+    }
+
+    function openMapModal(points, metaText) {
+      if (!ensureLeafletAvailable()) return;
+
+      __mapLastPoints = points || [];
+      $('mapModal').classList.remove('hidden');
+      $('mapMeta').textContent = metaText || '—';
+
+      // Init map once
+      if (!__map) {
+        __map = L.map('leafletMap', {
+          zoomControl: true,
+          scrollWheelZoom: true
+        });
+        __mapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 20,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(__map);
+      }
+
+      // Clear markers
+      __mapMarkers.forEach(m => m.remove());
+      __mapMarkers = [];
+
+      const listWrap = $('mapList');
+      listWrap.innerHTML = '';
+      $('mapCount').textContent = String(__mapLastPoints.length);
+
+      // If empty
+      if (!__mapLastPoints.length) {
+        $('mapHint').textContent = 'Tidak ada titik koordinat PBB-P2 yang valid pada hasil filter saat ini. Pastikan field "Titik Koordinat" terisi (format: -7.123, 110.123).';
+        // default view Indonesia-ish
+        __map.setView([-2.5, 118], 5);
+      } else {
+        $('mapHint').textContent = `Menampilkan ${__mapLastPoints.length} marker. Klik marker untuk membuka detail.`;
+
+        __mapLastPoints.forEach((p, idx) => {
+          const title = `${p.nop ? 'NOP: ' + p.nop + ' — ' : ''}${p.nama}`;
+          const popupHtml = `
+            <div style="min-width:220px">
+              <div style="font-weight:800; margin-bottom:2px; color:#0f172a;">${escapeHtml(p.nama)}</div>
+              <div style="font-size:11px; color:#475569; margin-bottom:6px;">${escapeHtml(p.nop || '-')}</div>
+              <div style="font-size:11px; color:#334155; margin-bottom:8px;">${escapeHtml(p.alamatObjek || '-')}</div>
+              <button type="button" data-map-open="${escapeHtml(p.id)}" style="padding:6px 10px; border-radius:10px; border:1px solid rgba(15,23,42,0.15); background:#0f172a; color:#fff; font-weight:800; font-size:12px;">Buka Detail</button>
+            </div>
+          `;
+
+          const m = L.marker([p.coord.lat, p.coord.lng], { title }).addTo(__map);
+          m.bindPopup(popupHtml);
+          m.on('popupopen', () => {
+            // attach click handler to the button inside popup
+            setTimeout(() => {
+              const btn = document.querySelector(`button[data-map-open="${CSS.escape(p.id)}"]`);
+              if (btn) {
+                btn.onclick = () => {
+                  closeMapModal();
+                  openDetail(p.id);
+                };
+              }
+            }, 0);
+          });
+          __mapMarkers.push(m);
+
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'dash-row-btn';
+          item.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-extrabold text-slate-900">${escapeHtml(p.nama)}</p>
+                <p class="text-[11px] text-slate-600 mono">${escapeHtml(p.nop || '-')}</p>
+                <p class="text-[11px] text-slate-600 line-clamp-2">${escapeHtml(p.alamatObjek || '-')}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[11px] text-slate-600 mono">${escapeHtml(p.coord.lat.toFixed(6))}, ${escapeHtml(p.coord.lng.toFixed(6))}</p>
+                <p class="text-[11px] font-semibold ${p.status === 'Aktif' ? 'text-emerald-700' : 'text-slate-700'}">${escapeHtml(p.status)}</p>
+              </div>
+            </div>
+          `;
+          item.addEventListener('click', () => {
+            __map.setView([p.coord.lat, p.coord.lng], 17, { animate: true });
+            __mapMarkers[idx]?.openPopup();
+          });
+          listWrap.appendChild(item);
+        });
+
+        fitMapToMarkers();
+      }
+
+      // Search within list
+      $('mapSearch').value = '';
+      $('mapSearch').oninput = () => {
+        const q = normalizeQuery($('mapSearch').value);
+        const filtered = __mapLastPoints.filter(p => {
+          const hay = [p.nama, p.nop, p.alamatObjek].map(normalizeQuery).join(' | ');
+          return hay.includes(q);
+        });
+        // rerender list only
+        listWrap.innerHTML = '';
+        filtered.forEach(p => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'dash-row-btn';
+          item.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-extrabold text-slate-900">${escapeHtml(p.nama)}</p>
+                <p class="text-[11px] text-slate-600 mono">${escapeHtml(p.nop || '-')}</p>
+                <p class="text-[11px] text-slate-600 line-clamp-2">${escapeHtml(p.alamatObjek || '-')}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[11px] text-slate-600 mono">${escapeHtml(p.coord.lat.toFixed(6))}, ${escapeHtml(p.coord.lng.toFixed(6))}</p>
+              </div>
+            </div>
+          `;
+          item.addEventListener('click', () => {
+            __map.setView([p.coord.lat, p.coord.lng], 17, { animate: true });
+          });
+          listWrap.appendChild(item);
+        });
+      };
+
+      // buttons
+      $('btnMapFit').onclick = fitMapToMarkers;
+      $('btnMapOpenOsm').onclick = () => {
+        if (!__mapLastPoints.length) {
+          toast('warn','Peta','Tidak ada titik untuk dibuka.');
+          return;
+        }
+        // open OSM around first point
+        const p = __mapLastPoints[0];
+        const url = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(p.coord.lat)}&mlon=${encodeURIComponent(p.coord.lng)}#map=18/${encodeURIComponent(p.coord.lat)}/${encodeURIComponent(p.coord.lng)}`;
+        window.open(url, '_blank');
+      };
+
+      // Fix map sizing after modal shows
+      setTimeout(() => { try { __map.invalidateSize(true); } catch {} }, 220);
+    }
+
+    function fitMapToMarkers() {
+      if (!__map || !__mapMarkers.length) return;
+      try {
+        const group = L.featureGroup(__mapMarkers);
+        __map.fitBounds(group.getBounds().pad(0.16));
+      } catch {
+        // fallback
+        const m = __mapMarkers[0];
+        if (m) __map.setView(m.getLatLng(), 15);
+      }
+    }
+
+    function closeMapModal() {
+      $('mapModal')?.classList.add('hidden');
+    }
 
     // =============== CLOUD SYNC (Supabase REST) ===============
     // Catatan:
