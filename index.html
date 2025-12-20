@@ -311,8 +311,37 @@
       background: #fff;
     }
 
+    /* Leaflet map container (picker) */
+    .leaflet-wrap-picker {
+      height: 420px;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(2, 6, 23, 0.10);
+      background: #fff;
+    }
+
+    .result-item {
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      background: rgba(255, 255, 255, 0.70);
+      padding: 10px;
+      box-shadow: 0 10px 22px rgba(2,6,23,0.06);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+    }
+
+    .result-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(15, 23, 42, 0.16);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 45px rgba(2,6,23,0.10);
+    }
+
     @media (max-width: 768px) {
       .leaflet-wrap { height: 62vh; }
+      .leaflet-wrap-picker { height: 56vh; }
     }
 
     @media print {
@@ -1128,6 +1157,68 @@ http://localhost:8080</pre>
       </div>
     </div>
 
+    <!-- Coordinate Picker Modal (Entri) -->
+    <div id="coordModal" class="fixed inset-0 z-50 hidden">
+      <div class="modal-backdrop absolute inset-0 bg-black/40" id="coordBackdrop"></div>
+      <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center p-0 md:p-6">
+        <div class="modal-panel bg-white w-full md:max-w-6xl md:rounded-2xl rounded-t-2xl border border-slate-200 shadow-xl max-h-[88vh] overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-600">Pilih Koordinat</p>
+              <h3 class="text-base font-extrabold">Titik Koordinat Objek Pajak</h3>
+              <p class="help mt-1">Klik pada peta untuk menentukan titik. Anda juga bisa mencari alamat/lokasi. Format yang akan diisi: <span class="mono">lat, long</span>.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnCoordClose" class="btn btn-ghost px-3 py-2" type="button">Tutup</button>
+            </div>
+          </div>
+
+          <div class="p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-auto" style="max-height: calc(88vh - 140px);">
+            <div class="lg:col-span-8">
+              <div id="leafletPicker" class="leaflet-wrap-picker"></div>
+              <div class="mt-3 flex flex-wrap gap-2 items-center">
+                <button id="btnCoordMyLocation" class="btn btn-ghost" type="button">Gunakan Lokasi Saya</button>
+                <button id="btnCoordCenter" class="btn btn-ghost" type="button">Ambil Titik Tengah</button>
+                <button id="btnCoordCopy" class="btn btn-ghost" type="button">Salin Koordinat</button>
+              </div>
+              <div id="coordHint" class="mt-2 help">Tip: klik peta untuk set marker. Geser/zoom untuk memilih lokasi lebih akurat.</div>
+            </div>
+            <div class="lg:col-span-4">
+              <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <p class="text-sm font-extrabold">Koordinat Terpilih</p>
+                <div class="mt-3 grid grid-cols-1 gap-3">
+                  <div>
+                    <label class="label">Lat, Long</label>
+                    <input id="coordValue" class="input mono" placeholder="-7.123, 110.123" />
+                    <p class="help mt-1">Anda bisa edit manual sebelum menerapkan.</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button id="btnCoordApply" class="btn btn-primary flex-1" type="button">Terapkan ke Form</button>
+                    <button id="btnCoordClear" class="btn btn-ghost" type="button">Kosongkan</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <p class="text-sm font-extrabold">Cari Lokasi</p>
+                <div class="mt-3 flex gap-2">
+                  <input id="coordSearch" class="input" placeholder="Cari alamat / nama tempat..." />
+                  <button id="btnCoordSearch" class="btn btn-ghost" type="button">Cari</button>
+                </div>
+                <div id="coordResults" class="mt-3 space-y-2 max-h-[44vh] overflow-auto pr-1"></div>
+                <p class="help mt-3">Pencarian menggunakan layanan Nominatim (OpenStreetMap). Batasi penggunaan berlebihan.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 border-t border-slate-200 flex items-center justify-between">
+            <span id="coordMeta" class="help">—</span>
+            <button id="btnCoordOpenOsm" class="btn btn-ghost" type="button">Buka di OpenStreetMap</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Cloud Modal (Koneksi Online) -->
     <div id="cloudModal" class="fixed inset-0 z-50 hidden">
       <div class="modal-backdrop absolute inset-0 bg-black/40" id="cloudBackdrop"></div>
@@ -1736,6 +1827,32 @@ with check (true);</pre>
         wrap.appendChild(div);
 
         const mount = div.querySelector(`#sf-${CSS.escape(f.key)}`);
+
+        // Special UI for coordinate: input + map picker button
+        if (f.key === 'titikKoordinat') {
+          const row = document.createElement('div');
+          row.className = 'flex gap-2 items-center';
+
+          const ip = document.createElement('input');
+          ip.className = 'input flex-1';
+          ip.type = 'text';
+          if (f.placeholder) ip.placeholder = f.placeholder;
+          ip.id = 'sf_' + f.key;
+          ip.dataset.required = f.required ? '1' : '0';
+          ip.dataset.label = f.label;
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-ghost whitespace-nowrap';
+          btn.textContent = 'Pilih dari Peta';
+          btn.addEventListener('click', () => openCoordPicker(ip.id));
+
+          row.appendChild(ip);
+          row.appendChild(btn);
+          mount.appendChild(row);
+          return;
+        }
+
         let el;
         if (f.type === 'select') {
           el = document.createElement('select');
@@ -3202,6 +3319,10 @@ with check (true);</pre>
       $('btnMapClose')?.addEventListener('click', closeMapModal);
       $('mapBackdrop')?.addEventListener('click', closeMapModal);
 
+      // Coordinate picker modal (Entri)
+      $('btnCoordClose')?.addEventListener('click', closeCoordPicker);
+      $('coordBackdrop')?.addEventListener('click', closeCoordPicker);
+
       // Export buttons
       $('btnExportJson').addEventListener('click', exportJSON);
       $('btnExportCsv').addEventListener('click', exportCSV);
@@ -3231,6 +3352,7 @@ with check (true);</pre>
           closeHelp();
           closeCloudModal();
           closeMapModal();
+          closeCoordPicker();
         }
       });
 
@@ -3450,6 +3572,203 @@ with check (true);</pre>
 
     function closeMapModal() {
       $('mapModal')?.classList.add('hidden');
+    }
+
+    // =============== COORDINATE PICKER (Leaflet) — Entri ===============
+    let __pickerMap = null;
+    let __pickerLayer = null;
+    let __pickerMarker = null;
+    let __coordTargetInputId = null;
+
+    function openCoordPicker(targetInputId) {
+      if (!ensureLeafletAvailable()) return;
+
+      __coordTargetInputId = targetInputId;
+      $('coordModal').classList.remove('hidden');
+
+      const targetEl = $(targetInputId);
+      const initialText = safeText(targetEl?.value).trim();
+      const initial = parseLatLng(initialText);
+
+      // init map once
+      if (!__pickerMap) {
+        __pickerMap = L.map('leafletPicker', {
+          zoomControl: true,
+          scrollWheelZoom: true
+        });
+        __pickerLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 20,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(__pickerMap);
+
+        __pickerMap.on('click', (e) => {
+          setPickerMarker(e.latlng.lat, e.latlng.lng, { pan: true });
+        });
+      }
+
+      // set marker and view
+      if (initial) {
+        setPickerMarker(initial.lat, initial.lng, { pan: false });
+        __pickerMap.setView([initial.lat, initial.lng], 17);
+        $('coordMeta').textContent = `Target: ${targetInputId} • Diisi dari nilai sebelumnya`;
+      } else {
+        // default view Indonesia-ish
+        __pickerMap.setView([-2.5, 118], 5);
+        $('coordMeta').textContent = `Target: ${targetInputId} • Klik peta untuk memilih titik`;
+        // clear marker but keep previous if any
+        setPickerMarker(null, null, { clearOnly: true });
+      }
+
+      $('coordValue').value = initial ? `${initial.lat.toFixed(6)}, ${initial.lng.toFixed(6)}` : '';
+      $('coordResults').innerHTML = '';
+      $('coordSearch').value = '';
+
+      // buttons
+      $('btnCoordApply').onclick = () => {
+        const v = $('coordValue').value.trim();
+        if (!__coordTargetInputId) {
+          toast('error','Koordinat','Target input tidak ditemukan.');
+          return;
+        }
+        const input = $(__coordTargetInputId);
+        if (!input) {
+          toast('warn','Koordinat','Field target sudah berubah (jenis pajak mungkin diganti). Buka lagi pemilih koordinat dari field yang benar.');
+          return;
+        }
+        input.value = v;
+        closeCoordPicker();
+        toast('ok','Koordinat','Koordinat diterapkan ke form.');
+      };
+
+      $('btnCoordClear').onclick = () => {
+        $('coordValue').value = '';
+        setPickerMarker(null, null, { clearOnly: true });
+      };
+
+      $('btnCoordCopy').onclick = async () => {
+        const v = $('coordValue').value.trim();
+        if (!v) { toast('warn','Koordinat','Belum ada koordinat.'); return; }
+        try {
+          await navigator.clipboard.writeText(v);
+          toast('ok','Koordinat','Koordinat disalin.');
+        } catch {
+          toast('warn','Koordinat','Clipboard ditolak. Salin manual dari input.');
+        }
+      };
+
+      $('btnCoordCenter').onclick = () => {
+        if (!__pickerMap) return;
+        const c = __pickerMap.getCenter();
+        setPickerMarker(c.lat, c.lng, { pan: false });
+      };
+
+      $('btnCoordMyLocation').onclick = () => {
+        if (!navigator.geolocation) {
+          toast('error','Lokasi','Browser tidak mendukung geolocation.');
+          return;
+        }
+        toast('ok','Lokasi','Meminta akses lokasi...');
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            setPickerMarker(lat, lng, { pan: true });
+            __pickerMap.setView([lat, lng], 17);
+            toast('ok','Lokasi','Lokasi berhasil didapat.');
+          },
+          (err) => {
+            toast('error','Lokasi', err?.message || 'Gagal mendapatkan lokasi.');
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      };
+
+      $('btnCoordOpenOsm').onclick = () => {
+        const parsed = parseLatLng($('coordValue').value);
+        if (!parsed) {
+          toast('warn','OpenStreetMap','Koordinat belum valid.');
+          return;
+        }
+        const url = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(parsed.lat)}&mlon=${encodeURIComponent(parsed.lng)}#map=18/${encodeURIComponent(parsed.lat)}/${encodeURIComponent(parsed.lng)}`;
+        window.open(url, '_blank');
+      };
+
+      // search
+      const doSearch = async () => {
+        const q = $('coordSearch').value.trim();
+        if (!q) { toast('warn','Cari lokasi','Masukkan kata kunci.'); return; }
+        $('coordResults').innerHTML = `<div class="help">Mencari...</div>`;
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&limit=8&q=${encodeURIComponent(q)}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) {
+            $('coordResults').innerHTML = `<div class="help">Tidak ada hasil.</div>`;
+            return;
+          }
+          const wrap = document.createElement('div');
+          wrap.className = 'space-y-2';
+          data.forEach(item => {
+            const lat = Number(item.lat);
+            const lng = Number(item.lon);
+            const name = item.display_name || `${item.lat}, ${item.lon}`;
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'result-item';
+            b.innerHTML = `
+              <div class="text-xs font-extrabold text-slate-900">${escapeHtml(name)}</div>
+              <div class="text-[11px] text-slate-600 mono mt-1">${escapeHtml(lat.toFixed(6))}, ${escapeHtml(lng.toFixed(6))}</div>
+            `;
+            b.addEventListener('click', () => {
+              setPickerMarker(lat, lng, { pan: true });
+              __pickerMap.setView([lat, lng], 17);
+            });
+            wrap.appendChild(b);
+          });
+          $('coordResults').innerHTML = '';
+          $('coordResults').appendChild(wrap);
+        } catch (e) {
+          $('coordResults').innerHTML = `<div class="help text-red-700">Gagal mencari: ${escapeHtml(e?.message || String(e))}</div>`;
+        }
+      };
+
+      $('btnCoordSearch').onclick = doSearch;
+      $('coordSearch').onkeydown = (e) => { if (e.key === 'Enter') doSearch(); };
+
+      // Fix map sizing after modal shows
+      setTimeout(() => { try { __pickerMap.invalidateSize(true); } catch {} }, 220);
+    }
+
+    function setPickerMarker(lat, lng, opts = {}) {
+      if (!__pickerMap) return;
+      if (opts.clearOnly) {
+        if (__pickerMarker) { __pickerMarker.remove(); __pickerMarker = null; }
+        return;
+      }
+      if (lat === null || lng === null) {
+        if (__pickerMarker) { __pickerMarker.remove(); __pickerMarker = null; }
+        return;
+      }
+      if (__pickerMarker) __pickerMarker.remove();
+      __pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(__pickerMap);
+      __pickerMarker.on('dragend', () => {
+        const p = __pickerMarker.getLatLng();
+        $('coordValue').value = `${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`;
+        $('coordMeta').textContent = `Dipilih: ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`;
+      });
+
+      $('coordValue').value = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+      $('coordMeta').textContent = `Dipilih: ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+
+      if (opts.pan) {
+        try { __pickerMap.panTo([lat, lng], { animate: true }); } catch {}
+      }
+    }
+
+    function closeCoordPicker() {
+      $('coordModal')?.classList.add('hidden');
+      __coordTargetInputId = null;
     }
 
     // =============== CLOUD SYNC (Supabase REST) ===============
@@ -4061,6 +4380,8 @@ with check (true);</pre>
         closeModal();
         closeHelp();
         closeCloudModal();
+        closeMapModal();
+        closeCoordPicker();
         toast('warn','Keluar','Anda telah logout.');
         // tampilkan gate
         showAuthGate(true);
