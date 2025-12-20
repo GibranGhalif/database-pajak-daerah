@@ -825,6 +825,8 @@
             <button id="btnMapPbb" class="btn btn-ghost" type="button" title="Tampilkan peta koordinat untuk objek PBB-P2">Lihat Peta (PBB-P2)</button>
             <button id="btnExportCsv" class="btn btn-ghost" type="button">Ekspor CSV</button>
             <button id="btnExportJson" class="btn btn-ghost" type="button">Ekspor JSON</button>
+            <button id="btnExportXlsxList" class="btn btn-ghost" type="button" title="Unduh Excel (XLSX) untuk hasil filter saat ini">Unduh XLSX</button>
+            <button id="btnExportPdfList" class="btn btn-ghost" type="button" title="Buka dialog cetak (Save as PDF) untuk hasil filter saat ini">Unduh PDF</button>
           </div>
         </div>
 
@@ -2649,6 +2651,130 @@ with check (true);</pre>
       }
     }
 
+    // Ekspor XLSX khusus hasil filter di tab Daftar
+    async function exportXLSXFiltered() {
+      if (!ensureXlsxAvailable()) return;
+      const rowsSrc = filteredRecords();
+      try {
+        const rows = toXlsxRows(rowsSrc);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(rows, { header: XLSX_HEADERS, skipHeader: false });
+        ws['!cols'] = XLSX_HEADERS.map(h => ({ wch: Math.min(42, Math.max(12, h.length + 2)) }));
+        XLSX.utils.book_append_sheet(wb, ws, 'WP');
+
+        const meta = [
+          ['Aplikasi', 'Database Wajib Pajak Daerah'],
+          ['Rujukan', 'UU 1/2022 (HKPD) & PP 35/2024'],
+          ['Diekspor', new Date().toLocaleString('id-ID')],
+          ['Sumber', 'Tab Daftar & Pencarian (hasil filter)'],
+          ['Jumlah record', rowsSrc.length],
+          ['Query', $('q')?.value || ''],
+          ['Filter Jenis', $('filterJenis')?.value || ''],
+          ['Filter Status', $('filterStatus')?.value || ''],
+          ['Filter Kepatuhan', $('filterKepatuhan')?.value || '']
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'README');
+
+        const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        download(`wpd-filtered-${new Date().toISOString().slice(0,10)}.xlsx`, out, XLSX_MIME);
+        toast('ok','Unduh','XLSX (hasil filter) berhasil diunduh.');
+      } catch (e) {
+        toast('error','Unduh XLSX gagal', e?.message || 'Terjadi kesalahan saat membuat XLSX.');
+      }
+    }
+
+    // "PDF" via dialog cetak browser (Save as PDF)
+    function exportPDFList() {
+      const rows = filteredRecords();
+      const q = $('q')?.value?.trim() || '';
+      const jenis = $('filterJenis')?.value || '';
+      const st = $('filterStatus')?.value || '';
+      const kp = $('filterKepatuhan')?.value || '';
+
+      const when = new Date().toLocaleString('id-ID');
+      const total = rows.length;
+
+      const tableRows = rows.map((r, i) => {
+        const khas = r.dataKhusus || {};
+        const iden = pickIdentity(r);
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(r.jenisPajak || '')}</td>
+            <td>${escapeHtml(r.nama || '')}</td>
+            <td>${escapeHtml(r.kategori || '')}</td>
+            <td>${escapeHtml(iden)}</td>
+            <td>${escapeHtml(r.status || '')}</td>
+            <td>${escapeHtml(r.statusKepatuhan || '')}</td>
+            <td>${escapeHtml(r.tglDaftar || '')}</td>
+            <td>${escapeHtml((khas.titikKoordinat || ''))}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const html = `<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daftar Wajib Pajak (Cetak)</title>
+<style>
+  body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 18px; color:#0f172a;}
+  h1{font-size: 16px; margin: 0 0 4px;}
+  .sub{color:#475569; font-size:11px; margin:0 0 10px;}
+  .meta{display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:10px 0 12px;}
+  .box{border:1px solid #e2e8f0; border-radius:10px; padding:8px;}
+  .k{font-size:10px; color:#64748b; margin:0 0 2px;}
+  .v{font-size:11px; font-weight:700; margin:0; white-space:pre-wrap; word-break:break-word;}
+  table{width:100%; border-collapse:collapse; font-size:10px;}
+  th,td{border:1px solid #e2e8f0; padding:6px; vertical-align:top;}
+  th{background:#f8fafc; text-align:left;}
+  .mono{font-variant-numeric: tabular-nums;}
+  @media print{
+    body{margin: 10mm;}
+  }
+</style></head>
+<body>
+  <h1>Daftar Wajib Pajak Daerah</h1>
+  <p class="sub">Rujukan: UU No. 1 Tahun 2022 (HKPD) & PP No. 35 Tahun 2024 — Dokumen administratif (hasil filter).</p>
+
+  <div class="meta">
+    <div class="box"><p class="k">Waktu Cetak</p><p class="v mono">${escapeHtml(when)}</p></div>
+    <div class="box"><p class="k">Jumlah Data</p><p class="v mono">${escapeHtml(total)}</p></div>
+    <div class="box"><p class="k">Query</p><p class="v">${escapeHtml(q || '—')}</p></div>
+    <div class="box"><p class="k">Filter</p><p class="v">${escapeHtml([jenis && ('Jenis: ' + jenis), st && ('Status: ' + st), kp && ('Kepatuhan: ' + kp)].filter(Boolean).join(' • ') || '—')}</p></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28px">No</th>
+        <th style="width:140px">Jenis Pajak</th>
+        <th>Nama WP</th>
+        <th style="width:90px">Kategori</th>
+        <th style="width:190px">Identitas</th>
+        <th style="width:70px">Status</th>
+        <th style="width:80px">Kepatuhan</th>
+        <th style="width:80px">Daftar</th>
+        <th style="width:110px">Koordinat</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows || '<tr><td colspan="9" style="text-align:center; color:#64748b;">Tidak ada data.</td></tr>'}
+    </tbody>
+  </table>
+
+  <script>window.onload = () => window.print();<\/script>
+</body></html>`;
+
+      const w = window.open('', '_blank');
+      if (!w) {
+        toast('error','Unduh PDF','Popup diblokir browser. Izinkan pop-up untuk mencetak/Save as PDF.');
+        return;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    }
+
     async function downloadXlsxTemplate() {
       if (!ensureXlsxAvailable()) return;
       try {
@@ -3083,6 +3209,10 @@ with check (true);</pre>
       $('btnExportCsv2').addEventListener('click', exportCSV);
       $('btnExportXlsx')?.addEventListener('click', exportXLSX);
       $('btnDownloadXlsxTemplate')?.addEventListener('click', downloadXlsxTemplate);
+
+      // Export from daftar (filtered)
+      $('btnExportXlsxList')?.addEventListener('click', exportXLSXFiltered);
+      $('btnExportPdfList')?.addEventListener('click', exportPDFList);
 
       // Import
       $('btnValidate').addEventListener('click', validateImport);
