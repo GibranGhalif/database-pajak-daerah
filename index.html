@@ -321,6 +321,24 @@
       background: #fff;
     }
 
+    /* Leaflet control polish (layer switcher, zoom, etc.) */
+    .leaflet-control {
+      border-radius: 12px !important;
+      border: 1px solid rgba(15, 23, 42, 0.12) !important;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.10);
+    }
+    .leaflet-control a {
+      border-radius: 0 !important;
+    }
+    .leaflet-control-layers {
+      background: rgba(255, 255, 255, 0.92) !important;
+      backdrop-filter: blur(10px);
+    }
+    .leaflet-control-layers-expanded {
+      padding: 10px 12px !important;
+    }
+
     .result-item {
       width: 100%;
       text-align: left;
@@ -1181,7 +1199,7 @@ http://localhost:8080</pre>
                 <button id="btnCoordCenter" class="btn btn-ghost" type="button">Ambil Titik Tengah</button>
                 <button id="btnCoordCopy" class="btn btn-ghost" type="button">Salin Koordinat</button>
               </div>
-              <div id="coordHint" class="mt-2 help">Tip: klik peta untuk set marker. Geser/zoom untuk memilih lokasi lebih akurat.</div>
+              <div id="coordHint" class="mt-2 help">Tip: klik peta untuk set marker. Geser/zoom untuk memilih lokasi lebih akurat. Anda bisa mengganti tampilan layer ke <span class="font-semibold">Citra Satelit</span> lewat kontrol layer di kanan atas peta.</div>
             </div>
             <div class="lg:col-span-4">
               <div class="rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
@@ -3596,10 +3614,27 @@ with check (true);</pre>
           zoomControl: true,
           scrollWheelZoom: true
         });
-        __pickerLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+        // Base layers
+        const baseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 20,
           attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(__pickerMap);
+        });
+
+        // Satellite imagery (Esri). Note: Terms apply; suitable for internal/admin preview.
+        const baseSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 20,
+          attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        });
+
+        __pickerLayer = baseOSM.addTo(__pickerMap);
+
+        // Layer switcher (top right)
+        L.control.layers(
+          { 'Peta': baseOSM, 'Citra Satelit': baseSat },
+          {},
+          { position: 'topright', collapsed: true }
+        ).addTo(__pickerMap);
 
         __pickerMap.on('click', (e) => {
           setPickerMarker(e.latlng.lat, e.latlng.lng, { pan: true });
