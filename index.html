@@ -362,10 +362,97 @@
       .leaflet-wrap-picker { height: 56vh; }
     }
 
+    /* === Extra UI polish (lebih menarik) === */
+
+    /* Soft floating blobs behind everything */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: -40px;
+      pointer-events: none;
+      background:
+        radial-gradient(520px 360px at 14% 18%, rgba(99, 102, 241, 0.18), transparent 60%),
+        radial-gradient(520px 360px at 86% 26%, rgba(14, 165, 233, 0.16), transparent 62%),
+        radial-gradient(560px 380px at 60% 92%, rgba(16, 185, 129, 0.14), transparent 62%);
+      filter: blur(18px);
+      opacity: 0.75;
+      z-index: 0;
+      transform: translateZ(0);
+      animation: floatBlob 14s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatBlob {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(10px, -12px, 0) scale(1.02); }
+      100% { transform: translate3d(-8px, 14px, 0) scale(1.01); }
+    }
+
+    /* Make form elements feel crisp */
+    .input::placeholder { color: rgba(100, 116, 139, 0.85); }
+    .input:disabled { opacity: 0.72; cursor: not-allowed; }
+
+    /* Buttons: subtle shine layer */
+    .btn { position: relative; overflow: hidden; }
+    .btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        radial-gradient(220px 120px at 18% 18%, rgba(255,255,255,0.50), transparent 60%),
+        radial-gradient(240px 120px at 82% 0%, rgba(255,255,255,0.30), transparent 62%);
+      opacity: 0;
+      transition: opacity .18s ease;
+      pointer-events: none;
+    }
+    .btn:hover::before { opacity: 0.9; }
+
+    /* Primary button: slightly richer gradient */
+    .btn-primary {
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 45%, #0f172a 100%);
+      border-color: rgba(15, 23, 42, 0.50);
+    }
+
+    /* Tabs: add tiny highlight */
+    .tab-active {
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 60%, #0f172a 100%);
+    }
+
+    /* KPI: accent line */
+    .kpi { position: relative; overflow: hidden; }
+    .kpi::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(29,78,216,0.85), rgba(16,185,129,0.75));
+      opacity: 0.65;
+    }
+
+    /* Table header: a bit more definition */
+    thead th { box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.06); }
+
+    /* Scrollbar polish (WebKit) */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.05); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.18);
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,0.65);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); }
+
+    @media (prefers-reduced-motion: reduce) {
+      body::after { animation: none !important; }
+    }
+
     @media print {
       .no-print { display: none !important; }
       body { background: white !important; }
       body::before { display: none !important; }
+      body::after { display: none !important; }
       .card { box-shadow: none !important; background: #fff !important; }
     }
   </style>
@@ -988,6 +1075,42 @@
             <button id="btnRestoreFromPaste" class="btn btn-warning" type="button">Pulihkan dari Tempelan (Replace)</button>
           </div>
           <textarea id="pasteArea" class="input mt-3" rows="6" placeholder="Tempel JSON di sini..."></textarea>
+        </div>
+
+        <div class="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-extrabold">Jalur Penyimpanan Database</h3>
+              <p class="help mt-1">Karena aplikasi berbasis web, “database” tersimpan di <span class="font-semibold">penyimpanan browser</span> (IndexedDB/localStorage). Browser tidak menampilkan path folder sistem secara langsung. Gunakan fitur <span class="font-semibold">backup</span> untuk menyimpan file ke komputer.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="btnCopyStoragePath" class="btn btn-ghost" type="button">Salin Info Jalur</button>
+            </div>
+          </div>
+
+          <pre id="storagePathInfo" class="mt-3 text-xs bg-white border border-slate-200 rounded-xl p-3 overflow-auto"></pre>
+
+          <div class="mt-4 rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <p class="text-sm font-extrabold">Backup ke Folder (opsional)</p>
+                <p class="help mt-1">Fitur ini memakai <span class="font-semibold">File System Access API</span> (umumnya Chrome/Edge) dan biasanya butuh <span class="font-semibold">HTTPS / localhost</span>. Jika tidak tersedia, gunakan tombol Unduh biasa.</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button id="btnPickBackupFolder" class="btn btn-ghost" type="button">Pilih Folder Backup</button>
+                <button id="btnBackupFolderClear" class="btn btn-ghost" type="button">Lepas Folder</button>
+              </div>
+            </div>
+
+            <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <span id="backupFolderLabel" class="chip bg-white border-slate-200 text-slate-700">Folder: (belum dipilih)</span>
+              <div class="flex flex-wrap gap-2">
+                <button id="btnBackupJsonFolder" class="btn btn-primary" type="button">Simpan Backup JSON ke Folder</button>
+                <button id="btnBackupXlsxFolder" class="btn btn-ghost" type="button">Simpan Backup XLSX ke Folder</button>
+              </div>
+            </div>
+            <p id="backupFolderHint" class="help mt-2">Catatan: alasan keamanan browser, nama folder bisa tampil, namun path lengkap biasanya tidak dapat ditampilkan.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -2703,6 +2826,159 @@ with check (true);</pre>
       toast('ok','Ekspor','CSV berhasil diunduh.');
     }
 
+    // =============== STORAGE PATH / BACKUP FOLDER (opsional) ===============
+    const BACKUP_DIR_KEY = 'wpd_backup_dir_v1';
+    let __backupDirHandle = null;
+
+    function isFileSystemAccessSupported() {
+      return typeof window !== 'undefined' && !!window.showDirectoryPicker;
+    }
+
+    function getSiteOrigin() {
+      try { return location.origin; } catch { return '(unknown)'; }
+    }
+
+    function storageInfoText() {
+      const conf = cloudGet?.() || { enabled: false };
+      const lines = [];
+      lines.push('== Penyimpanan Database (Browser) ==');
+      lines.push(`Mode penyimpanan: ${__storageMode}`);
+      lines.push(`IndexedDB: DB_NAME=${DB_NAME}, DB_VERSION=${DB_VERSION}, STORE=${DB_STORE}`);
+      lines.push(`localStorage: KEY=${STORAGE_KEY}`);
+      lines.push('');
+      lines.push('== Identitas Situs ==');
+      lines.push(`Origin: ${getSiteOrigin()}`);
+      lines.push(`UserAgent: ${navigator.userAgent}`);
+      lines.push('');
+      lines.push('== Cloud (jika aktif) ==');
+      if (conf?.enabled) {
+        lines.push(`Provider: ${conf.provider || 'supabase'}`);
+        lines.push(`Tenant: ${conf.tenant || '-'}`);
+        lines.push(`URL: ${conf.url || '-'}`);
+        lines.push(`Table: ${conf.table || '-'}`);
+        lines.push(`Strategy: ${conf.strategy || '-'}`);
+        lines.push(`Last sync: ${conf.lastSyncAt || '-'}`);
+      } else {
+        lines.push('Cloud: Off');
+      }
+      lines.push('');
+      lines.push('Catatan: Browser tidak memberikan path folder sistem untuk IndexedDB/localStorage.');
+      lines.push('Gunakan Ekspor/Backup untuk menyimpan file ke perangkat.');
+      return lines.join('\n');
+    }
+
+    function renderStoragePathInfo() {
+      const el = $('storagePathInfo');
+      if (!el) return;
+      el.textContent = storageInfoText();
+
+      const folderLabel = $('backupFolderLabel');
+      if (folderLabel) {
+        const name = __backupDirHandle?.name || '';
+        folderLabel.textContent = name ? `Folder: ${name}` : 'Folder: (belum dipilih)';
+      }
+
+      const hint = $('backupFolderHint');
+      if (hint) {
+        hint.textContent = isFileSystemAccessSupported()
+          ? 'Catatan: alasan keamanan browser, nama folder bisa tampil, namun path lengkap biasanya tidak dapat ditampilkan.'
+          : 'File System Access API tidak tersedia di browser ini. Gunakan tombol Unduh biasa.';
+      }
+    }
+
+    async function tryRestoreBackupDirHandle() {
+      // Best effort: sebagian browser mendukung menyimpan handle di IndexedDB via structured clone.
+      // Di sini kita simpan ke localStorage sebagai tanda saja; handle tidak bisa diserialisasi di semua browser.
+      // Jadi kita hanya tampilkan label; untuk keamanan, user biasanya harus memilih folder ulang.
+      __backupDirHandle = null;
+      renderStoragePathInfo();
+    }
+
+    async function pickBackupFolder() {
+      if (!isFileSystemAccessSupported()) {
+        toast('warn','Folder backup','Browser tidak mendukung pemilihan folder. Gunakan Unduh biasa.');
+        return;
+      }
+      try {
+        __backupDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        // simpan marker agar UI tahu pernah dipilih
+        localStorage.setItem(BACKUP_DIR_KEY, JSON.stringify({ pickedAt: new Date().toISOString(), name: __backupDirHandle?.name || '' }));
+        renderStoragePathInfo();
+        toast('ok','Folder backup','Folder backup dipilih.');
+      } catch (e) {
+        toast('warn','Folder backup', e?.message || 'Dibatalkan.');
+      }
+    }
+
+    function clearBackupFolder() {
+      __backupDirHandle = null;
+      localStorage.removeItem(BACKUP_DIR_KEY);
+      renderStoragePathInfo();
+      toast('ok','Folder backup','Folder dilepas.');
+    }
+
+    async function writeFileToDir(dirHandle, filename, content, mime) {
+      if (!dirHandle) throw new Error('Folder belum dipilih.');
+      // create file
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable();
+      const blob = (content instanceof Blob) ? content : new Blob([content], { type: mime || 'application/octet-stream' });
+      await writable.write(blob);
+      await writable.close();
+      return true;
+    }
+
+    async function backupJsonToFolder() {
+      if (!__backupDirHandle) {
+        toast('warn','Backup ke folder','Pilih folder backup terlebih dahulu.');
+        return;
+      }
+      const payload = { meta: { app: 'Database Wajib Pajak Daerah', version: 1, exportedAt: new Date().toISOString() }, data: db };
+      const name = `wpd-backup-${new Date().toISOString().slice(0,10)}.json`;
+      try {
+        await writeFileToDir(__backupDirHandle, name, JSON.stringify(payload, null, 2), 'application/json');
+        toast('ok','Backup','Backup JSON tersimpan di folder.');
+      } catch (e) {
+        toast('error','Backup','Gagal menyimpan: ' + (e?.message || String(e)));
+      }
+    }
+
+    async function backupXlsxToFolder() {
+      if (!__backupDirHandle) {
+        toast('warn','Backup ke folder','Pilih folder backup terlebih dahulu.');
+        return;
+      }
+      if (!ensureXlsxAvailable()) return;
+      const name = `wpd-data-${new Date().toISOString().slice(0,10)}.xlsx`;
+      try {
+        const rows = toXlsxRows(db);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(rows, { header: XLSX_HEADERS, skipHeader: false });
+        ws['!cols'] = XLSX_HEADERS.map(h => ({ wch: Math.min(42, Math.max(12, h.length + 2)) }));
+        XLSX.utils.book_append_sheet(wb, ws, 'WP');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+          ['Aplikasi', 'Database Wajib Pajak Daerah'],
+          ['Rujukan', 'UU 1/2022 (HKPD) & PP 35/2024'],
+          ['Diekspor', new Date().toLocaleString('id-ID')],
+        ]), 'README');
+        const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        await writeFileToDir(__backupDirHandle, name, new Blob([out], { type: XLSX_MIME }), XLSX_MIME);
+        toast('ok','Backup','Backup XLSX tersimpan di folder.');
+      } catch (e) {
+        toast('error','Backup','Gagal menyimpan: ' + (e?.message || String(e)));
+      }
+    }
+
+    async function copyStoragePathInfo() {
+      const text = storageInfoText();
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('ok','Tersalin','Info penyimpanan disalin ke clipboard.');
+      } catch {
+        toast('warn','Clipboard ditolak','Tidak bisa menyalin. Anda bisa salin manual dari kotak info.');
+      }
+    }
+
     // =============== XLSX (Excel) ===============
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     const XLSX_HEADERS = [
@@ -3261,6 +3537,12 @@ with check (true);</pre>
       // update cloud/mode badges after init
       try { renderCloudBadge(); renderModeBadge(); } catch {}
 
+      // Storage path info / backup folder status
+      try {
+        await tryRestoreBackupDirHandle();
+        renderStoragePathInfo();
+      } catch {}
+
       // Tabs
       document.querySelectorAll('[data-tab]').forEach(btn => {
         btn.addEventListener('click', () => setTab(btn.dataset.tab));
@@ -3348,6 +3630,13 @@ with check (true);</pre>
       $('btnExportCsv2').addEventListener('click', exportCSV);
       $('btnExportXlsx')?.addEventListener('click', exportXLSX);
       $('btnDownloadXlsxTemplate')?.addEventListener('click', downloadXlsxTemplate);
+
+      // Storage path / backup folder
+      $('btnCopyStoragePath')?.addEventListener('click', copyStoragePathInfo);
+      $('btnPickBackupFolder')?.addEventListener('click', pickBackupFolder);
+      $('btnBackupFolderClear')?.addEventListener('click', clearBackupFolder);
+      $('btnBackupJsonFolder')?.addEventListener('click', backupJsonToFolder);
+      $('btnBackupXlsxFolder')?.addEventListener('click', backupXlsxToFolder);
 
       // Export from daftar (filtered)
       $('btnExportXlsxList')?.addEventListener('click', exportXLSXFiltered);
