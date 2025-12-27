@@ -11,6 +11,11 @@
   <!-- Maps (Leaflet + OpenStreetMap) for PBB-P2 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- GIS import support (Peta Blok): SHP/KMZ/KML -> GeoJSON -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.6.0/dist/togeojson.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/shpjs@latest/dist/shp.min.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -357,6 +362,12 @@
       box-shadow: 0 18px 45px rgba(2,6,23,0.10);
     }
 
+    /* Peta Blok (overlay) */
+    .block-muted {
+      color: rgba(100, 116, 139, 0.92);
+      font-size: 12px;
+    }
+
     @media (max-width: 768px) {
       .leaflet-wrap { height: 62vh; }
       .leaflet-wrap-picker { height: 56vh; }
@@ -455,11 +466,44 @@
       body::after { display: none !important; }
       .card { box-shadow: none !important; background: #fff !important; }
     }
+
+    /* === Login background: watermark logo Pemda Sidrap ===
+       Catatan: ini watermark vektor (SVG) agar tidak perlu file eksternal.
+       Jika Anda punya logo resmi, cukup ganti nilai --sidrap-logo dengan URL gambar (png/jpg/svg). */
+    :root {
+      --sidrap-logo: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='900'%20height='900'%20viewBox='0%200%20900%20900'%3E%3Cdefs%3E%3CradialGradient%20id='g'%20cx='50%25'%20cy='40%25'%20r='70%25'%3E%3Cstop%20offset='0%25'%20stop-color='%23ffffff'%20stop-opacity='0.26'/%3E%3Cstop%20offset='70%25'%20stop-color='%23ffffff'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='900'%20height='900'%20fill='none'/%3E%3Cg%20opacity='0.95'%3E%3Ccircle%20cx='450'%20cy='450'%20r='320'%20fill='url(%23g)'%20stroke='%23ffffff'%20stroke-opacity='0.50'%20stroke-width='14'/%3E%3Ccircle%20cx='450'%20cy='450'%20r='275'%20fill='none'%20stroke='%23ffffff'%20stroke-opacity='0.22'%20stroke-width='6'%20stroke-dasharray='12%2018'/%3E%3Ctext%20x='450'%20y='435'%20text-anchor='middle'%20font-family='ui-sans-serif,system-ui,-apple-system,Segoe%20UI,Roboto,Arial'%20font-size='112'%20font-weight='900'%20fill='%23ffffff'%20fill-opacity='0.62'%3ESIDRAP%3C/text%3E%3Ctext%20x='450'%20y='500'%20text-anchor='middle'%20font-family='ui-sans-serif,system-ui,-apple-system,Segoe%20UI,Roboto,Arial'%20font-size='28'%20font-weight='800'%20letter-spacing='6'%20fill='%23ffffff'%20fill-opacity='0.60'%3EPEMDA%3C/text%3E%3Ctext%20x='450'%20y='540'%20text-anchor='middle'%20font-family='ui-sans-serif,system-ui,-apple-system,Segoe%20UI,Roboto,Arial'%20font-size='18'%20font-weight='700'%20letter-spacing='2'%20fill='%23ffffff'%20fill-opacity='0.55'%3EKAB.%20SIDENRENG%20RAPPANG%3C/text%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .login-watermark {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(900px 520px at 18% -10%, rgba(99, 102, 241, 0.22), transparent 60%),
+        radial-gradient(900px 520px at 88% 0%, rgba(14, 165, 233, 0.18), transparent 60%),
+        radial-gradient(900px 520px at 50% 110%, rgba(16, 185, 129, 0.16), transparent 60%),
+        var(--sidrap-logo);
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: clamp(320px, 62vmin, 680px);
+      filter: saturate(1.06) contrast(1.02);
+      opacity: 0.70;
+      transform: translateZ(0);
+    }
+
+    /* Biar kartu login terasa lebih fokus di atas watermark */
+    #authGate .card {
+      background: rgba(255, 255, 255, 0.86);
+      border-color: rgba(15, 23, 42, 0.10);
+      box-shadow: 0 26px 80px rgba(2, 6, 23, 0.16);
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <!-- AUTH GATE (Login) -->
   <div id="authGate" class="fixed inset-0 z-50 hidden">
+    <div class="login-watermark"></div>
     <div class="absolute inset-0 bg-slate-950/35 modal-backdrop"></div>
     <div class="relative min-h-full flex items-center justify-center p-4">
       <div class="card w-full max-w-md p-5 md:p-6 border-slate-900/10 bg-white/80 backdrop-blur">
@@ -468,7 +512,7 @@
             <div class="brand-badge h-11 w-11 rounded-xl text-white flex items-center justify-center font-black">WP</div>
             <div>
               <h2 class="text-lg font-extrabold leading-tight">Login</h2>
-              <p class="text-xs text-slate-600">Akses aplikasi Database Wajib Pajak Daerah (offline).</p>
+              <p class="text-xs text-slate-600">Akses aplikasi Database Wajib Pajak Daerah (lokal/cloud).</p>
             </div>
           </div>
           <span id="modeBadge" class="chip bg-white/80 border-slate-200 text-slate-700">Mode: Lokal</span>
@@ -1262,7 +1306,7 @@ http://localhost:8080</pre>
             <div>
               <p class="text-xs text-slate-600">Peta</p>
               <h3 class="text-base font-extrabold">PBB-P2 — Lokasi Objek (berdasarkan Titik Koordinat)</h3>
-              <p class="help mt-1">Menampilkan marker untuk <span class="font-semibold">Pajak Bumi dan Bangunan</span> dengan format koordinat <span class="mono">lat, long</span> (contoh: <span class="mono">-7.123, 110.123</span>).</p>
+              <p class="help mt-1">Menampilkan marker untuk <span class="font-semibold">Pajak Bumi dan Bangunan</span> dengan format koordinat <span class="mono">lat, long</span> (contoh: <span class="mono">-7.123, 110.123</span>). Anda bisa mengganti tampilan ke <span class="font-semibold">Citra Satelit</span> lewat kontrol layer di kanan atas peta.</p>
             </div>
             <div class="flex gap-2">
               <button id="btnMapFit" class="btn btn-ghost px-3 py-2" type="button">Zoom ke Semua</button>
@@ -1284,15 +1328,46 @@ http://localhost:8080</pre>
                 <div class="mt-3">
                   <input id="mapSearch" class="input" placeholder="Cari (nama/NOP/alamat)..." />
                 </div>
-                <div id="mapList" class="mt-3 space-y-2 max-h-[52vh] overflow-auto pr-1"></div>
+                <div id="mapList" class="mt-3 space-y-2 max-h-[34vh] overflow-auto pr-1"></div>
                 <p class="help mt-3">Klik item untuk membuka detail WP.</p>
+              </div>
+
+              <div class="mt-4 rounded-xl border border-slate-200 bg-white/60 backdrop-blur p-4">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-sm font-extrabold">Peta Blok (SHP / KMZ)</p>
+                  <span id="blockLayerBadge" class="chip bg-white border-slate-200 text-slate-700">Layer: 0</span>
+                </div>
+                <p class="help mt-2">Impor peta blok untuk overlay (tanpa server). Format: <span class="font-semibold">.kmz</span> (KML terkompres) atau <span class="font-semibold">.zip</span> Shapefile (SHP+SHX+DBF). Data hanya dipakai di peta dan tidak disimpan otomatis.</p>
+
+                <div class="mt-3 grid grid-cols-1 gap-3">
+                  <div>
+                    <label class="label">Impor File</label>
+                    <input id="blockFile" type="file" class="input" accept=".kmz,.kml,.zip,.shp" />
+                    <p class="help mt-1">Saran: gunakan <span class="mono">.zip</span> Shapefile atau <span class="mono">.kmz</span>. Jika mengunggah <span class="mono">.shp</span> saja, file pendamping (.dbf/.shx) mungkin tidak terbaca.</p>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <button id="btnImportBlock" class="btn btn-primary" type="button">Impor Layer</button>
+                    <button id="btnClearBlock" class="btn btn-ghost" type="button">Hapus Layer</button>
+                    <label class="chip bg-white border-slate-200 text-slate-700">
+                      <input id="toggleBlock" type="checkbox" class="accent-slate-900" checked />
+                      Tampilkan
+                    </label>
+                  </div>
+
+                  <pre id="blockLog" class="text-xs bg-white border border-slate-200 rounded-xl p-3 max-h-36 overflow-auto"></pre>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="p-4 border-t border-slate-200 flex items-center justify-between">
+          <div class="p-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span id="mapMeta" class="help">—</span>
-            <button id="btnMapOpenOsm" class="btn btn-primary" type="button">Buka di OpenStreetMap</button>
+            <div class="flex flex-wrap gap-2">
+              <button id="btnMapOpenOsm" class="btn btn-primary" type="button">OpenStreetMap</button>
+              <button id="btnMapOpenGmaps" class="btn btn-ghost" type="button">Google Maps</button>
+              <button id="btnMapOpenGearth" class="btn btn-ghost" type="button">Google Earth</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1307,7 +1382,7 @@ http://localhost:8080</pre>
             <div>
               <p class="text-xs text-slate-600">Pilih Koordinat</p>
               <h3 class="text-base font-extrabold">Titik Koordinat Objek Pajak</h3>
-              <p class="help mt-1">Klik pada peta untuk menentukan titik. Anda juga bisa mencari alamat/lokasi. Format yang akan diisi: <span class="mono">lat, long</span>.</p>
+              <p class="help mt-1">Klik pada peta untuk menentukan titik. Anda juga bisa mencari alamat/lokasi. Format yang akan diisi: <span class="mono">lat, long</span>. Tombol Google Maps/Earth akan membuka tab baru (izinkan pop-up jika diblokir).</p>
             </div>
             <div class="flex gap-2">
               <button id="btnCoordClose" class="btn btn-ghost px-3 py-2" type="button">Tutup</button>
@@ -1352,9 +1427,13 @@ http://localhost:8080</pre>
             </div>
           </div>
 
-          <div class="p-4 border-t border-slate-200 flex items-center justify-between">
+          <div class="p-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span id="coordMeta" class="help">—</span>
-            <button id="btnCoordOpenOsm" class="btn btn-ghost" type="button">Buka di OpenStreetMap</button>
+            <div class="flex flex-wrap gap-2">
+              <button id="btnCoordOpenOsm" class="btn btn-ghost" type="button">OpenStreetMap</button>
+              <button id="btnCoordOpenGmaps" class="btn btn-ghost" type="button">Google Maps</button>
+              <button id="btnCoordOpenGearth" class="btn btn-ghost" type="button">Google Earth</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1865,6 +1944,33 @@ with check (true);</pre>
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+    }
+
+    // External map links (Google Maps/Earth/OSM) — tanpa API key
+    function openStreetMapUrl(lat, lng, zoom = 18) {
+      return `https://www.openstreetmap.org/?mlat=${encodeURIComponent(lat)}&mlon=${encodeURIComponent(lng)}#map=${zoom}/${encodeURIComponent(lat)}/${encodeURIComponent(lng)}`;
+    }
+
+    function googleMapsUrl(lat, lng) {
+      // Lebih kompatibel daripada parameter q pada beberapa perangkat
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + ',' + lng)}`;
+    }
+
+    function googleEarthUrl(lat, lng) {
+      // Pola search lebih stabil daripada URL @... untuk sebagian perangkat
+      return `https://earth.google.com/web/search/${encodeURIComponent(lat + ',' + lng)}`;
+    }
+
+    function openExternal(url, label = 'Link') {
+      try {
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) throw new Error('Popup diblokir');
+        return true;
+      } catch {
+        toast('warn', label, 'Popup/Tab baru diblokir browser. Izinkan pop-up untuk situs ini.');
+        try { window.prompt('Salin tautan berikut (popup diblokir):', url); } catch {}
+        return false;
+      }
     }
 
     function pickIdentity(r) {
@@ -3686,8 +3792,187 @@ with check (true);</pre>
     // =============== MAP (Leaflet) — PBB-P2 ===============
     let __map = null;
     let __mapLayer = null;
+    let __mapBaseOSM = null;
+    let __mapBaseSat = null;
+    let __mapLayersCtrl = null;
     let __mapMarkers = [];
     let __mapLastPoints = [];
+
+    // Peta Blok overlay (GeoJSON from SHP/KML/KMZ)
+    let __blockLayer = null;
+    let __blockLayerMeta = { name: '', features: 0 };
+
+    function blockLog(msg) {
+      const el = $('blockLog');
+      if (!el) return;
+      el.textContent = msg || '';
+    }
+
+    function setBlockBadge() {
+      const badge = $('blockLayerBadge');
+      if (!badge) return;
+      const n = __blockLayerMeta?.features || 0;
+      badge.textContent = `Layer: ${n}`;
+    }
+
+    function ensureGisLibs() {
+      const ok = (typeof JSZip !== 'undefined') && (typeof shp !== 'undefined') && (typeof toGeoJSON !== 'undefined');
+      if (!ok) {
+        toast('error','GIS tidak tersedia','Library GIS (JSZip/toGeoJSON/shpjs) gagal dimuat. Pastikan koneksi internet saat pertama kali membuka halaman.');
+        return false;
+      }
+      return true;
+    }
+
+    function normalizeGeoJson(gj) {
+      if (!gj) return null;
+      // shpjs kadang mengembalikan FeatureCollection atau array FC
+      if (Array.isArray(gj)) {
+        const features = gj.flatMap(x => (x?.features || [])).filter(Boolean);
+        return { type: 'FeatureCollection', features };
+      }
+      if (gj.type === 'FeatureCollection') return gj;
+      if (gj.type === 'Feature') return { type: 'FeatureCollection', features: [gj] };
+      // geometry only
+      if (gj.type && (gj.coordinates || gj.geometries)) {
+        return { type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: gj }] };
+      }
+      return null;
+    }
+
+    function styleBlockFeature(feature) {
+      const p = feature?.properties || {};
+      // Basic styling, can be adjusted later
+      return {
+        color: p.stroke || '#1d4ed8',
+        weight: Number(p['stroke-width'] || p.strokeWidth || 2) || 2,
+        opacity: 0.95,
+        fillColor: p.fill || '#60a5fa',
+        fillOpacity: p['fill-opacity'] ? Number(p['fill-opacity']) : 0.12
+      };
+    }
+
+    function bindBlockPopup(feature, layer) {
+      const p = feature?.properties || {};
+      const keys = Object.keys(p || {}).slice(0, 12);
+      const rows = keys.map(k => `<div style="display:flex; justify-content:space-between; gap:10px;"><span style="color:#64748b; font-size:11px;">${escapeHtml(k)}</span><span style="font-weight:700; font-size:11px; color:#0f172a;">${escapeHtml(String(p[k] ?? ''))}</span></div>`).join('');
+      const html = `<div style="min-width:220px"><div style="font-weight:900; color:#0f172a; margin-bottom:6px;">Peta Blok</div>${rows || '<div style="color:#64748b; font-size:11px;">(tanpa atribut)</div>'}</div>`;
+      layer.bindPopup(html);
+    }
+
+    function addBlockLayerToMap(geojson, name) {
+      if (!__map) return;
+
+      // remove existing
+      if (__blockLayer) {
+        try { __blockLayer.remove(); } catch {}
+        __blockLayer = null;
+      }
+
+      const gj = normalizeGeoJson(geojson);
+      if (!gj) throw new Error('GeoJSON tidak valid.');
+
+      __blockLayerMeta = { name: name || 'Layer', features: (gj.features || []).length };
+
+      __blockLayer = L.geoJSON(gj, {
+        style: styleBlockFeature,
+        onEachFeature: bindBlockPopup
+      }).addTo(__map);
+
+      // ensure toggle
+      const t = $('toggleBlock');
+      if (t) t.checked = true;
+
+      setBlockBadge();
+
+      // try fit bounds
+      try {
+        const b = __blockLayer.getBounds();
+        if (b && b.isValid()) {
+          __map.fitBounds(b.pad(0.12));
+        }
+      } catch {}
+    }
+
+    function clearBlockLayer() {
+      if (__blockLayer) {
+        try { __blockLayer.remove(); } catch {}
+      }
+      __blockLayer = null;
+      __blockLayerMeta = { name: '', features: 0 };
+      setBlockBadge();
+      blockLog('');
+    }
+
+    async function parseKmlTextToGeoJson(kmlText) {
+      if (!ensureGisLibs()) throw new Error('Library GIS belum tersedia.');
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(kmlText, 'text/xml');
+      const gj = toGeoJSON.kml(xml);
+      return normalizeGeoJson(gj);
+    }
+
+    async function parseKmzToGeoJson(buf) {
+      if (!ensureGisLibs()) throw new Error('Library GIS belum tersedia.');
+      const zip = await JSZip.loadAsync(buf);
+      // pick first .kml
+      const kmlFile = Object.keys(zip.files).find(n => n.toLowerCase().endsWith('.kml'));
+      if (!kmlFile) throw new Error('KMZ tidak berisi file KML.');
+      const kmlText = await zip.file(kmlFile).async('text');
+      return await parseKmlTextToGeoJson(kmlText);
+    }
+
+    async function parseShpZipToGeoJson(buf) {
+      if (!ensureGisLibs()) throw new Error('Library GIS belum tersedia.');
+      // shpjs can parse ArrayBuffer zip
+      const gj = await shp(buf);
+      return normalizeGeoJson(gj);
+    }
+
+    async function importBlockFile(file) {
+      if (!file) throw new Error('File belum dipilih.');
+      if (!ensureLeafletAvailable()) throw new Error('Leaflet tidak tersedia.');
+      if (!ensureGisLibs()) throw new Error('Library GIS tidak tersedia.');
+
+      const name = file.name || 'Layer';
+      const lower = name.toLowerCase();
+
+      blockLog('Memproses file...');
+
+      if (lower.endsWith('.kml')) {
+        const text = await file.text();
+        const gj = await parseKmlTextToGeoJson(text);
+        addBlockLayerToMap(gj, name);
+        blockLog(`OK. Terbaca KML: ${__blockLayerMeta.features} fitur.`);
+        toast('ok','Peta Blok','Layer KML berhasil dimuat.');
+        return;
+      }
+
+      const buf = await file.arrayBuffer();
+
+      if (lower.endsWith('.kmz')) {
+        const gj = await parseKmzToGeoJson(buf);
+        addBlockLayerToMap(gj, name);
+        blockLog(`OK. Terbaca KMZ/KML: ${__blockLayerMeta.features} fitur.`);
+        toast('ok','Peta Blok','Layer KMZ berhasil dimuat.');
+        return;
+      }
+
+      if (lower.endsWith('.zip')) {
+        const gj = await parseShpZipToGeoJson(buf);
+        addBlockLayerToMap(gj, name);
+        blockLog(`OK. Terbaca SHP ZIP: ${__blockLayerMeta.features} fitur.`);
+        toast('ok','Peta Blok','Layer SHP (ZIP) berhasil dimuat.');
+        return;
+      }
+
+      if (lower.endsWith('.shp')) {
+        // Without .dbf/.shx this is not reliable; show guidance.
+        throw new Error('Upload .shp saja biasanya tidak cukup. Silakan ZIP satu folder Shapefile (SHP+SHX+DBF) lalu upload .zip.');
+      }
+
+      throw new Error('Format tidak didukung. Gunakan .kmz / .kml / .zip (shapefile).');
+    }
 
     function parseLatLng(text) {
       const s = safeText(text).trim();
@@ -3740,10 +4025,28 @@ with check (true);</pre>
           zoomControl: true,
           scrollWheelZoom: true
         });
-        __mapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+        // Base layers
+        __mapBaseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 20,
           attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(__map);
+        });
+
+        // Satellite imagery (Esri). Note: Terms apply; suitable for internal/admin preview.
+        __mapBaseSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 20,
+          attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        });
+
+        // Default layer
+        __mapLayer = __mapBaseOSM.addTo(__map);
+
+        // Layer switcher (top right)
+        __mapLayersCtrl = L.control.layers(
+          { 'Peta': __mapBaseOSM, 'Citra Satelit': __mapBaseSat },
+          {},
+          { position: 'topright', collapsed: true }
+        ).addTo(__map);
       }
 
       // Clear markers
@@ -3764,21 +4067,28 @@ with check (true);</pre>
 
         __mapLastPoints.forEach((p, idx) => {
           const title = `${p.nop ? 'NOP: ' + p.nop + ' — ' : ''}${p.nama}`;
+          const gmaps = googleMapsUrl(p.coord.lat, p.coord.lng);
+          const gearth = googleEarthUrl(p.coord.lat, p.coord.lng);
+
           const popupHtml = `
-            <div style="min-width:220px">
+            <div style="min-width:240px">
               <div style="font-weight:800; margin-bottom:2px; color:#0f172a;">${escapeHtml(p.nama)}</div>
               <div style="font-size:11px; color:#475569; margin-bottom:6px;">${escapeHtml(p.nop || '-')}</div>
               <div style="font-size:11px; color:#334155; margin-bottom:8px;">${escapeHtml(p.alamatObjek || '-')}</div>
-              <button type="button" data-map-open="${escapeHtml(p.id)}" style="padding:6px 10px; border-radius:10px; border:1px solid rgba(15,23,42,0.15); background:#0f172a; color:#fff; font-weight:800; font-size:12px;">Buka Detail</button>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" data-map-open="${escapeHtml(p.id)}" style="padding:6px 10px; border-radius:10px; border:1px solid rgba(15,23,42,0.15); background:#0f172a; color:#fff; font-weight:800; font-size:12px;">Detail</button>
+                <a href="${escapeHtml(gmaps)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; padding:6px 10px; border-radius:10px; border:1px solid rgba(15,23,42,0.15); background:#ffffff; color:#0f172a; font-weight:800; font-size:12px;">GMaps</a>
+                <a href="${escapeHtml(gearth)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; padding:6px 10px; border-radius:10px; border:1px solid rgba(15,23,42,0.15); background:#ffffff; color:#0f172a; font-weight:800; font-size:12px;">GEarth</a>
+              </div>
             </div>
           `;
 
           const m = L.marker([p.coord.lat, p.coord.lng], { title }).addTo(__map);
           m.bindPopup(popupHtml);
           m.on('popupopen', () => {
-            // attach click handler to the button inside popup
             setTimeout(() => {
-              const btn = document.querySelector(`button[data-map-open="${CSS.escape(p.id)}"]`);
+              const root = m.getPopup()?.getElement();
+              const btn = root?.querySelector(`button[data-map-open="${CSS.escape(p.id)}"]`);
               if (btn) {
                 btn.onclick = () => {
                   closeMapModal();
@@ -3850,16 +4160,92 @@ with check (true);</pre>
 
       // buttons
       $('btnMapFit').onclick = fitMapToMarkers;
+      function mapFocusPoint() {
+        if (!__map || !__mapLastPoints.length) return null;
+        // prefer center point of current map view
+        try {
+          const c = __map.getCenter();
+          const cLat = c.lat;
+          const cLng = c.lng;
+          // choose nearest point to center
+          let best = null;
+          let bestD = Infinity;
+          for (const p of __mapLastPoints) {
+            const d = Math.hypot((p.coord.lat - cLat), (p.coord.lng - cLng));
+            if (d < bestD) { bestD = d; best = p; }
+          }
+          return best || __mapLastPoints[0];
+        } catch {
+          return __mapLastPoints[0];
+        }
+      }
+
       $('btnMapOpenOsm').onclick = () => {
         if (!__mapLastPoints.length) {
           toast('warn','Peta','Tidak ada titik untuk dibuka.');
           return;
         }
-        // open OSM around first point
-        const p = __mapLastPoints[0];
-        const url = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(p.coord.lat)}&mlon=${encodeURIComponent(p.coord.lng)}#map=18/${encodeURIComponent(p.coord.lat)}/${encodeURIComponent(p.coord.lng)}`;
-        window.open(url, '_blank');
+        const p = mapFocusPoint() || __mapLastPoints[0];
+        openExternal(openStreetMapUrl(p.coord.lat, p.coord.lng, 18), 'OpenStreetMap');
       };
+
+      $('btnMapOpenGmaps').onclick = () => {
+        if (!__mapLastPoints.length) {
+          toast('warn','Peta','Tidak ada titik untuk dibuka.');
+          return;
+        }
+        const p = mapFocusPoint() || __mapLastPoints[0];
+        openExternal(googleMapsUrl(p.coord.lat, p.coord.lng), 'Google Maps');
+      };
+
+      $('btnMapOpenGearth').onclick = () => {
+        if (!__mapLastPoints.length) {
+          toast('warn','Peta','Tidak ada titik untuk dibuka.');
+          return;
+        }
+        const p = mapFocusPoint() || __mapLastPoints[0];
+        openExternal(googleEarthUrl(p.coord.lat, p.coord.lng), 'Google Earth');
+      };
+
+      // Peta Blok UI wiring (setiap modal dibuka)
+      try {
+        setBlockBadge();
+        if ($('blockFile')) $('blockFile').value = '';
+        if ($('toggleBlock')) {
+          $('toggleBlock').onchange = () => {
+            if (!__map) return;
+            const show = $('toggleBlock').checked;
+            if (!__blockLayer) return;
+            try {
+              if (show) __blockLayer.addTo(__map);
+              else __blockLayer.remove();
+            } catch {}
+          };
+        }
+
+        if ($('btnClearBlock')) {
+          $('btnClearBlock').onclick = () => {
+            clearBlockLayer();
+            toast('ok','Peta Blok','Layer dihapus.');
+          };
+        }
+
+        if ($('btnImportBlock')) {
+          $('btnImportBlock').onclick = async () => {
+            try {
+              const f = $('blockFile')?.files?.[0];
+              if (!f) {
+                toast('warn','Peta Blok','Pilih file .kmz/.kml/.zip terlebih dahulu.');
+                return;
+              }
+              await importBlockFile(f);
+            } catch (e) {
+              blockLog('Gagal: ' + (e?.message || String(e)));
+              toast('error','Peta Blok','Gagal mengimpor layer.');
+            }
+          };
+        }
+      } catch {}
 
       // Fix map sizing after modal shows
       setTimeout(() => { try { __map.invalidateSize(true); } catch {} }, 220);
@@ -3879,6 +4265,9 @@ with check (true);</pre>
 
     function closeMapModal() {
       $('mapModal')?.classList.add('hidden');
+      // Biarkan layer peta blok tetap di memori agar bisa dipakai lagi saat modal dibuka.
+      // Namun rapikan log agar tidak membingungkan.
+      try { blockLog($('blockLog')?.textContent || ''); setBlockBadge(); } catch {}
     }
 
     // =============== COORDINATE PICKER (Leaflet) — Entri ===============
@@ -4013,8 +4402,25 @@ with check (true);</pre>
           toast('warn','OpenStreetMap','Koordinat belum valid.');
           return;
         }
-        const url = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(parsed.lat)}&mlon=${encodeURIComponent(parsed.lng)}#map=18/${encodeURIComponent(parsed.lat)}/${encodeURIComponent(parsed.lng)}`;
-        window.open(url, '_blank');
+        openExternal(openStreetMapUrl(parsed.lat, parsed.lng, 18), 'OpenStreetMap');
+      };
+
+      $('btnCoordOpenGmaps').onclick = () => {
+        const parsed = parseLatLng($('coordValue').value);
+        if (!parsed) {
+          toast('warn','Google Maps','Koordinat belum valid.');
+          return;
+        }
+        openExternal(googleMapsUrl(parsed.lat, parsed.lng), 'Google Maps');
+      };
+
+      $('btnCoordOpenGearth').onclick = () => {
+        const parsed = parseLatLng($('coordValue').value);
+        if (!parsed) {
+          toast('warn','Google Earth','Koordinat belum valid.');
+          return;
+        }
+        openExternal(googleEarthUrl(parsed.lat, parsed.lng), 'Google Earth');
       };
 
       // search
